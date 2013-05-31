@@ -4,9 +4,15 @@ body {
 	padding-top:18px
 }
 
-.CodeMirror-wrap, .hx-options, .js-canvas
- {
+.tab-content {
 	margin-bottom:18px;
+}
+.messages {
+	position: absolute;
+	width: 100%;
+}
+.span6 {
+	position: relative;
 }
 
 .hx-options {
@@ -26,8 +32,6 @@ body {
 }
 .CodeMirror {
 	line-height:1.2em;
-}
-.CodeMirror {
 	border: 1px solid #DDD;
 	-webkit-border-radius: 4px;
 	-moz-border-radius: 4px;

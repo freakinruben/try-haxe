@@ -36,6 +36,8 @@ typedef ChangeEvent = {
 
 	public function setValue( v : String ) : Void;
 	public function getValue() : String;
+	public function setOption( n:String, v:Dynamic ) : Void;
+	public function getOption( n:String ) : Dynamic;
 	public function refresh() : Void;
 
 	public function getCursor( ?start : Bool ) : Pos;
