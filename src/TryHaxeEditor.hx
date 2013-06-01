@@ -36,7 +36,7 @@ class TryHaxeEditor
         compileBtn = new JQuery(editorId+".compile-btn");
         libs = new JQuery(editorId+".hx-libs");
         targets = new JQuery(editorId+".hx-targets");
-        jsTab = new JQuery(editorId+"a[href='#js-source']");
+        jsTab = new JQuery(editorId+"a[href='.js-source']");
         outDisplay = new JQuery(editorId+".compiler-out");
 
         new JQuery(editorId+".link-btn").bind("click", function(e) {
@@ -47,9 +47,7 @@ class TryHaxeEditor
         new JQuery("body").bind("keyup", onKey);
         new JQuery(editorId+"a[data-toggle='tab']").bind("shown", function (_) editor.refreshSources());
 
-        trace(targets);
-        targets.delegate(editorId+"input[name='target-"+id+"']", "change", changeTarget);
-        
+        targets.delegate(editorId+"input.hx-target", "change", changeTarget);
         compileBtn.bind("click", function (_) editor.compile());
 
         var uid = js.Lib.window.location.hash;
@@ -63,12 +61,12 @@ class TryHaxeEditor
         editorId = null;
         editor.dispose();
         editor = null;
+        form = messages = compileBtn = targets = libs = outDisplay = haxeOutput = jsTab = null;
     }
 
     
     private function changeTarget (e:JqEvent)
     {
-        trace(e);
         editor.program.target = editor.toTarget(new JQuery(e.target).val().parseInt());
         updateTargetCheckbox();
     }
@@ -89,8 +87,7 @@ class TryHaxeEditor
                 sel = "swf";
                 jsTab.hide();
         }
-        var radio = new JQuery("input[name='target'][value='" + sel +"']");
-        radio.attr('checked' ,'checked');
+        new JQuery(editorId+"input#target-"+editorId.substr(1,editorId.length - 2)+"-"+sel).attr('checked' ,'checked');
         libs.find("."+sel+"-libs").fadeIn();
     }
 
@@ -245,7 +242,7 @@ class TryHaxeEditor
 
     private inline function initializeUI ()
     {
-        var name = editorId.substr(1);
+        var name = editorId.substr(1, editorId.length - 2); //FIXME editorId.substr(1, -2); seems broken for JS. Still the case for haxe3?
         var textarea = new JQuery(editorId+" textarea[name='hx-source']")
             .wrap('<div class="row-fluid">')
             .wrap('<div class="compiler-in span6" />')
@@ -257,8 +254,8 @@ class TryHaxeEditor
                         <div class="control-group hx-targets">
                             <label class="control-label" for="libs-checkbox">Target</label>
                             <div class="controls">
-                                <label class="radio inline"><input type="radio" name="target-'+name+'" value="js"></input> JS</label>
-                                <label class="radio inline"><input type="radio" name="target-'+name+'" value="swf"></input> SWF</label>
+                                <input type="radio" name="target-'+name+'" class="hx-target" id="target-'+name+'-js" value="'+Editor.JS+'"></input><label for="target-'+name+'-js" class="radio inline">JS</label>
+                                <input type="radio" name="target-'+name+'" class="hx-target" id="target-'+name+'-swf" value="'+Editor.SWF+'"></input><label for="target-'+name+'-swf" class="radio inline">SWF</label>
                             </div>
                         </div>
 

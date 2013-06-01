@@ -332,8 +332,10 @@ class Editor
     {
         new JQuery('head').append('
             <link rel="stylesheet" href="'+opt.root+'lib/CodeMirror2/lib/codemirror.css"/>
-            <link rel="stylesheet" href="'+opt.root+'lib/CodeMirror2/lib/util/simple-hint.css"/>
-            <link rel="stylesheet" href="'+opt.root+'lib/CodeMirror2/theme/'+opt.haxeCode.theme+'.css"/>');
+            <link rel="stylesheet" href="'+opt.root+'lib/CodeMirror2/lib/util/simple-hint.css"/>');
+        if (opt.haxeCode.theme != 'default')
+            new JQuery('head').append('<link rel="stylesheet" href="'+opt.root+'lib/CodeMirror2/theme/'+opt.haxeCode.theme+'.css"/>');
+        
         new JQuery('body').append('
             <script src="'+opt.root+'lib/CodeMirror2/lib/codemirror.js"></script>
             <script src="'+opt.root+'lib/CodeMirror2/mode/haxe/haxe.js"></script>
