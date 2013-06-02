@@ -243,6 +243,7 @@ class Compiler {
 				args.push("-D");
 				args.push("noEmbedJS");
 				html.body.push("<script src='//ajax.googleapis.com/ajax/libs/jquery/1.7.1/jquery.min.js'></script>");
+				html.body.push('<script>window.jQuery || document.write("<script src=\'../../../lib/jquery.min.js\'><\\/script>")</script>');
 				
 				
 

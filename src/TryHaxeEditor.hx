@@ -1,6 +1,7 @@
 import api.Program;
 import js.JQuery;
  using js.bootstrap.Button;
+ using Lambda;
  using Std;
 
 class TryHaxeEditor
@@ -47,7 +48,7 @@ class TryHaxeEditor
         new JQuery("body").bind("keyup", onKey);
         new JQuery(editorId+"a[data-toggle='tab']").bind("shown", function (_) editor.refreshSources());
 
-        targets.delegate(editorId+"input.hx-target", "change", changeTarget);
+        targets.delegate("input.hx-target", "change", changeTarget);
         compileBtn.bind("click", function (_) editor.compile());
 
         var uid = js.Lib.window.location.hash;
@@ -97,8 +98,7 @@ class TryHaxeEditor
         for (t in ["swf","js"]) {
             var el = libs.find("."+t+"-libs");
             var libs : Array<Libs.LibConf> = Reflect.field(Libs.available, t);
-            for (l in libs) {
-
+            for (l in libs)
                 el.append(
                     '<label class="checkbox"><input class="lib" type="checkbox" value="' + l.name + '" ' 
                     + ((Libs.defaultChecked.has(l.name) /*|| selectedLib(l.name)*/) ? "checked='checked'" : "") 
@@ -107,8 +107,6 @@ class TryHaxeEditor
                     +"' target='_blank'><i class='icon-question-sign'></i></a></span>"
                     + "</label>"
                    );
-        
-            }
         }
     }
 
@@ -123,26 +121,6 @@ class TryHaxeEditor
         else
             for (lib in libs.find("input.lib:checked"))
                 lib.removeAttr("checked");
-    }
-
-
-    function updateProgram () {
-        var libs = new Array();
-        var sel = switch (program.target) {
-            case JS(_): "js";
-            case SWF(_,_) : "swf";
-        }
-        var inputs = new JQuery(editorId+" .hx-options .hx-libs ."+sel+"-libs input.lib:checked");
-        // TODO: change libs array only then need
-        for (i in inputs)  // refill libs array, only checked libs
-        {
-            //var l:api.Program.Library = { name:i.attr("value"), checked:true };
-            //var d = Std.string(i.data("args"));
-            //if (d.length > 0) l.args = d.split("~");
-            libs.push(i.val());
-        }
-
-        program.libs = libs;
     }
 
 
@@ -181,6 +159,7 @@ class TryHaxeEditor
     private function handleLoaded ()
     {
         updateTargetCheckbox();
+        initLibs();
     }
 
 
@@ -188,6 +167,17 @@ class TryHaxeEditor
     {
         messages.fadeOut(0);
         compileBtn.buttonLoading();
+
+        var libs = new Array();
+        var sel = switch (editor.program.target) {
+            case JS(_): "js";
+            case SWF(_,_) : "swf";
+        }
+        var inputs = new JQuery(editorId+".hx-options .hx-libs ."+sel+"-libs input.lib:checked");
+        for (i in inputs)
+            libs.push(i.val());
+
+        editor.program.libs = libs;
     }
 
 

@@ -2,7 +2,6 @@ import api.Program;
 import haxe.remoting.HttpAsyncConnection;
 import js.codemirror.CodeMirror;
 import js.JQuery;
- using Lambda;
  using StringTools;
 
 typedef EditorOptions = {
@@ -183,8 +182,6 @@ class Editor
         p.uid   = null;     // auto-fork
 
         haxeSource.setValue(p.main.source);
-        
-
         if (handleLoaded != null)
             handleLoaded();
     }
