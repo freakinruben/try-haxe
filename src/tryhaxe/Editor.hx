@@ -66,7 +66,7 @@ class Editor
     public var output     (default, null) : Output;
 
     private var cnx             : HttpAsyncConnection;
-    private var markers         : Array<MarkedText>;
+    private var markers         : Array<TextMarker>;
     private var lineHandles     : Array<LineHandle>;
     private var completions     : Array<String>;
     private var completionIndex : Int;
@@ -249,7 +249,7 @@ class Editor
     }
 
 
-    private function onCodeChange (cm:CodeMirror, e:js.codemirror.CodeMirror.ChangeEvent)
+    private function onCodeChange (cm:CodeMirror, e:Dynamic)//js.codemirror.CodeMirror.ChangeEvent)
         if (e.text[0].trim().endsWith(".")) {
             autocomplete(haxeSource);
         }
@@ -326,7 +326,7 @@ class Editor
     {
         new JQuery('head').append('
             <link rel="stylesheet" href="'+opt.root+'lib/CodeMirror2/lib/codemirror.css"/>
-            <link rel="stylesheet" href="'+opt.root+'lib/CodeMirror2/lib/util/simple-hint.css"/>');
+            <link rel="stylesheet" href="'+opt.root+'lib/CodeMirror2/addon/hint/show-hint.css"/>');
         if (opt.haxeCode.theme != 'default')
             new JQuery('head').append('<link rel="stylesheet" href="'+opt.root+'lib/CodeMirror2/theme/'+opt.haxeCode.theme+'.css"/>');
         
@@ -335,7 +335,6 @@ class Editor
             <script src="'+opt.root+'lib/CodeMirror2/mode/haxe/haxe.js"></script>
             <script src="'+opt.root+'lib/CodeMirror2/mode/javascript/javascript.js"></script>
             <script src="'+opt.root+'lib/haxe-hint.js"></script>
-            <script src="'+opt.root+'lib/bootstrap/js/bootstrap.min.js" ></script>
         ');
         loadedResources = true;
     }
