@@ -64,10 +64,10 @@ class Editor
     public var program    (default, null) : Program;
     public var output     (default, null) : Output;
 
-    private var cnx : HttpAsyncConnection;
-    private var markers : Array<MarkedText>;
-    private var lineHandles : Array<LineHandle>;
-    private var completions : Array<String>;
+    private var cnx             : HttpAsyncConnection;
+    private var markers         : Array<MarkedText>;
+    private var lineHandles     : Array<LineHandle>;
+    private var completions     : Array<String>;
     private var completionIndex : Int;
 
 
@@ -81,8 +81,8 @@ class Editor
         markers = [];
         lineHandles = [];
 
-        CodeMirror.commands.autocomplete = autocomplete;
-        CodeMirror.commands.compile = function(_) compile();
+        CodeMirror.commands.autocomplete     = autocomplete;
+        CodeMirror.commands.compile          = function(_) compile();
         CodeMirror.commands.togglefullscreen = toggleFullscreenSource;
 
         // Initialize UI

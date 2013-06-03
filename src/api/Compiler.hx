@@ -116,14 +116,14 @@ class Compiler
 			prepareProgram(program);
 		} catch (err:String) {
 			return {
-				uid : program.uid,
-				args : [],
-				stderr : err,
-				stdout : "",
-				errors : [err],
-				success : false,
-				href : "",
-				source : ""
+				uid:     program.uid,
+				args:    [],
+				stderr:  err,
+				stdout:  "",
+				errors:  [err],
+				success: false,
+				href:    "",
+				source:  ""
 			}
 		}
 

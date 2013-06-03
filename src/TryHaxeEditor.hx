@@ -6,26 +6,25 @@ import js.JQuery;
 
 class TryHaxeEditor
 {
-    var editor : Editor;
-    var form : JQuery;
-    var messages : JQuery;
+    var editorId   : String;
+    var editor     : Editor;
+    var form       : JQuery;
+    var messages   : JQuery;
     var compileBtn : JQuery;
-    var targets : JQuery;
-    var libs : JQuery;
+    var targets    : JQuery;
+    var libs       : JQuery;
     var outDisplay : JQuery;
     var haxeOutput : JQuery;
-    var jsTab : JQuery;
-    
-    var editorId : String;
+    var jsTab      : JQuery;
 
 
     public function new (id)
     {
         editorId = "#"+id+" ";
+        initializeUI();
+
         var options = Editor.defaultOptions();
         options.apiURI = new JQuery("body").data("api") + "/compiler";
-
-        initializeUI();
         editor = new Editor(id, options);
 
         editor.handleLoaded   = handleLoaded;
@@ -33,11 +32,11 @@ class TryHaxeEditor
         editor.handleCompiled = handleCompiled;
 
         haxeOutput = new JQuery(editorId+"iframe[name='js-run']");
-        messages = new JQuery(editorId+".messages");
+        messages   = new JQuery(editorId+".messages");
         compileBtn = new JQuery(editorId+".compile-btn");
-        libs = new JQuery(editorId+".hx-libs");
-        targets = new JQuery(editorId+".hx-targets");
-        jsTab = new JQuery(editorId+"a[href='.js-source']");
+        libs       = new JQuery(editorId+".hx-libs");
+        targets    = new JQuery(editorId+".hx-targets");
+        jsTab      = new JQuery(editorId+"a[href='.js-source']");
         outDisplay = new JQuery(editorId+".compiler-out");
 
         new JQuery(editorId+".link-btn").bind("click", function(e) {
@@ -81,13 +80,8 @@ class TryHaxeEditor
         libs.find(".controls").hide();
         var sel:String;
         switch (editor.program.target) {
-            case JS(_): 
-                sel = "js";
-                jsTab.fadeIn();
-
-            case SWF(_,_) : 
-                sel = "swf";
-                jsTab.hide();
+            case JS(_):    sel = "js";  jsTab.fadeIn();
+            case SWF(_,_): sel = "swf"; jsTab.hide();
         }
         new JQuery(editorId+"input#target-"+editorId.substr(1,editorId.length - 2)+"-"+sel).attr('checked' ,'checked');
         libs.find("."+sel+"-libs").fadeIn();
