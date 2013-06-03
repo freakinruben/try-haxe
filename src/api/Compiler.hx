@@ -7,13 +7,13 @@ package api;
 
 class Compiler
 {
+	private static var forbidden = ~/@([^:]*):([^a-z]*)(macro|build|autoBuild|file|audio|bitmap)/;
 	var tmpDir   : String;
 	var mainFile : String;
 
 	public function new() {}
 
-	static function checkMacros (s:String) {
-		var forbidden = ~/@([^:]*):([^a-z]*)(macro|build|autoBuild|file|audio|bitmap)/;
+	static inline function checkMacros (s:String) {
 		if (forbidden.match(s))
 			throw "Unauthorized : @:"+forbidden.matched(3)+"";  
 	}
