@@ -97,10 +97,7 @@ class Compiler
 				args.push("-swf-version");
 				args.push(version.string());
 		}
-
-		args.concat(program.options);
-
-		var out   = runHaxe(args);
+		var out   = runHaxe(args = args.concat(program.options));
 		var words = [];
 		try {
 			var xml = new haxe.xml.Fast(Xml.parse(out.err).firstChild());
@@ -125,7 +122,6 @@ class Compiler
 				stdout : "",
 				errors : [err],
 				success : false,
-				message : "Build failure",
 				href : "",
 				source : ""
 			}
@@ -166,9 +162,7 @@ class Compiler
 				html.head.push('<script type="text/javascript">swfobject.embedSWF("'+Api.base+"/"+outputPath+'?r='+Math.random()+'", "flashContent", "100%", "100%", "'+version+'.0.0", null, {}, {wmode:"direct", scale:"noscale"})</script>');
 				html.body.push('<div id="flashContent"><p><a href="http://www.adobe.com/go/getflashplayer"><img src="http://www.adobe.com/images/shared/download_buttons/get_flash_player.gif" alt="Get Adobe Flash player" /></a></p></div>');
 		}
-
-		args.concat(program.options);
-		var out = runHaxe(args);
+		var out = runHaxe(args = args.concat(program.options));
 		var err = out.err.split(tmpDir + "/").join("");
 		var errors = err.split("\n");
 
@@ -179,7 +173,6 @@ class Compiler
 				args:    args,
 				errors:  errors,
 				success: out.exitCode == 0,
-				message: out.exitCode == 0 ? "Build success!" : "Build failure",
 				href:    out.exitCode == 0 ? runUrl : "",
 				source:  ""};
 

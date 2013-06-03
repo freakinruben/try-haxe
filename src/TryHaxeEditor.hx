@@ -213,8 +213,8 @@ class TryHaxeEditor
                 .addClass("disabled")
                 .attr("href", "#");
         }
-
-        messages.html("<div class='alert alert-"+msgType+"'><h4 class='alert-heading'>" + o.message + "</h4><div class='message'></div></div>");
+        var message = o.success ? "Build success!" : "Build failure";
+        messages.html("<div class='alert alert-"+msgType+"'><h4 class='alert-heading'>" + message + "</h4><div class='message'></div></div>");
         for (m in msg)
             messages.find(".message").append(new JQuery("<div>").text(m));
         

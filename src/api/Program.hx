@@ -25,7 +25,6 @@ typedef Output = {
 	args : Array<String>,
 	errors : Array<String>,
 	success : Bool,
-	message : String,
 	href : String,
 	source : String
 }
