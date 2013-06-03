@@ -39,7 +39,7 @@ class Editor
         className: 'Test',
         editorKeys: defaultKeys,
         targets: SWF | JS,
-        defaultTarget: JS,
+        defaultTarget: SWF,
         haxeCode: haxeOptions(),
         jsOutput: jsOptions(),
         apiURI: "/compiler",
@@ -94,6 +94,10 @@ class Editor
             jsSource = CodeMirror.fromTextArea(cast new JQuery("#"+id+" textarea[name='js-source']")[0], options.jsOutput);
         
         cnx = HttpAsyncConnection.urlConnect(options.apiURI);
+    }
+
+
+    public function startNewProgram () {
         onProgramLoaded({
             uid: null,
             main: {
@@ -180,7 +184,6 @@ class Editor
     {
         program = p;        // sharing
         p.uid   = null;     // auto-fork
-
         haxeSource.setValue(p.main.source);
         if (handleLoaded != null)
             handleLoaded();

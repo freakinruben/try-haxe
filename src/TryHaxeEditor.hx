@@ -51,9 +51,12 @@ class TryHaxeEditor
         targets.delegate("input.hx-target", "change", changeTarget);
         compileBtn.bind("click", function (_) editor.compile());
 
+        initLibs(Libs.available.js, "js");
+        initLibs(Libs.available.swf, "swf");
+
         var uid = js.Lib.window.location.hash;
-        if (uid.length > 0)
-            editor.loadProgram(uid.substr(1));
+        if (uid.length > 0) editor.loadProgram(uid.substr(1));
+        else                editor.startNewProgram();
     }
 
 
@@ -75,11 +78,9 @@ class TryHaxeEditor
 
     private function updateTargetCheckbox ()
     {
-        var target = editor.program.target;
         libs.find(".controls").hide();
-        
         var sel:String;
-        switch (target) {
+        switch (editor.program.target) {
             case JS(_): 
                 sel = "js";
                 jsTab.fadeIn();
@@ -105,16 +106,6 @@ class TryHaxeEditor
                 +"' target='_blank'><i class='icon-question-sign'></i></a></span>"
                 + "</label>"
                );
-    }
-
-
-    private function onProgramLoaded (p:Program)
-    {
-        libs.find('input.lib').removeAttr('checked');
-        if (p.options != null)
-            for (lib in libs.find("input.lib"))
-                if (p.options.has(lib.val()))
-                    lib.attr("checked","checked");
     }
 
 
@@ -153,8 +144,11 @@ class TryHaxeEditor
     private function handleLoaded ()
     {
         updateTargetCheckbox();
-        initLibs(Libs.available.js, "js");
-        initLibs(Libs.available.swf, "swf");
+        libs.find('input.lib').removeAttr('checked');
+        if (editor.program.options != null)
+            for (lib in libs.find("input.lib"))
+                if (editor.program.options.has(lib.val()))
+                    lib.attr("checked","checked");
     }
 
 
