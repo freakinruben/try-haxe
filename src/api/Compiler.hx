@@ -1,137 +1,89 @@
 package api;
+ import sys.FileSystem;
+ import sys.io.File;
+  using Lambda;
+  using Std;
 
-#if php
-import php.Web;
-import php.Sys;
-import php.Lib;
-import php.FileSystem;
-import php.io.File;
-#end
 
-using Lambda;
-
-typedef HTMLConf = 
+class Compiler
 {
-	head:Array<String>,
-	body:Array<String>
-}
-
-class Compiler {
-
-	var tmpDir : String;
+	var tmpDir   : String;
 	var mainFile : String;
 
-	public function new(){}
+	public function new() {}
 
-	static function checkMacros( s : String ){
+	static function checkMacros (s:String) {
 		var forbidden = ~/@([^:]*):([^a-z]*)(macro|build|autoBuild|file|audio|bitmap)/;
-		if( forbidden.match( s ) ) throw "Unauthorized : @:"+forbidden.matched(3)+"";  
+		if (forbidden.match(s))
+			throw "Unauthorized : @:"+forbidden.matched(3)+"";  
 	}
 
-	function prepareProgram( program : Program ){
 
-		while( program.uid == null ){
-
-			var id = haxe.Md5.encode( Std.string( Math.random() ) +Std.string( Date.now().getTime() ) );
+	function prepareProgram (program:Program)
+	{
+		while (program.uid == null)
+		{
+			var id = haxe.Md5.encode(Math.random().string() + Date.now().getTime().string());
 			id = id.substr(0, 5);
 			var uid = "";
-			for (i in 0...id.length) uid += if (Math.random() > 0.5) id.charAt(i).toUpperCase() else id.charAt(i);
+			for (i in 0...id.length)
+				uid += Math.random() > 0.5 ? id.charAt(i).toUpperCase() : id.charAt(i);
 
 			var tmpDir = Api.tmp + "/" + uid;
-			if( !(FileSystem.exists( tmpDir )) ){
+			if (!FileSystem.exists(tmpDir))
 				program.uid = uid;
-			}
 		}
 
-		Api.checkSanity( program.uid );
-		Api.checkSanity( program.main.name );
+		Api.checkSanity(program.uid);
+		Api.checkSanity(program.main.name);
 
 		tmpDir = Api.tmp + "/" + program.uid;
 
-		if( !FileSystem.isDirectory( tmpDir )){
-			FileSystem.createDirectory( tmpDir );
-		}
+		if (!FileSystem.isDirectory(tmpDir))
+			FileSystem.createDirectory(tmpDir);
 
-		mainFile = tmpDir + "/" + program.main.name + ".hx";
-
+		mainFile   = tmpDir + "/" + program.main.name + ".hx";
 		var source = program.main.source;
-		checkMacros( source );
+		checkMacros(source);
 		
-		File.saveContent( mainFile , source );
+		File.saveContent(mainFile, source);
 
 		var s = program.main.source;
 		program.main.source = null;
-		File.saveContent( tmpDir + "/program", haxe.Serializer.run(program));
+		File.saveContent(tmpDir + "/program", haxe.Serializer.run(program));
 		program.main.source = s;
-
 	}
 
-	//public function getProgram(uid:String):{p:Program, o:Program.Output} 
-	public function getProgram(uid:String):Program
+
+	public function getProgram (uid:String):Program
 	{
 		Api.checkSanity(uid);
-		
-		if (FileSystem.isDirectory( Api.tmp + "/" + uid ))
-		{
-			tmpDir = Api.tmp + "/" + uid;
-
-			var s = File.getContent(tmpDir + "/program"); 
-			var p:Program = haxe.Unserializer.run(s);
-
-			mainFile = tmpDir + "/" + p.main.name + ".hx";
-
-			p.main.source = File.getContent(mainFile);
-
-			/*
-			var o:Program.Output = null;
-
-			var htmlPath : String = tmpDir + "/" + "index.html";
-
-			if (FileSystem.exists(htmlPath))
-			{
-				var runUrl = Api.base + "/program/"+p.uid+"/run";
-				o = {
-					uid : p.uid,
-					stderr : null,
-					stdout : "",
-					args : [],
-					errors : [],
-					success : true,
-					message : "Build success!",
-					href : runUrl,
-					source : ""
-				}
-
-				switch (p.target) {
-					case JS(name):
-					var outputPath = tmpDir + "/" + name + ".js";
-					o.source = File.getContent(outputPath);
-					default:
-				}
-			}
-			*/
-			//return {p:p, o:o};
-			return p;
-		}
-
-		return null;
+		if (!FileSystem.isDirectory(Api.tmp + "/" + uid))
+			return null;
+	
+		tmpDir = Api.tmp + "/" + uid;
+		var p:Program = haxe.Unserializer.run(File.getContent(tmpDir + "/program"));
+		mainFile = tmpDir + "/" + p.main.name + ".hx";
+		p.main.source = File.getContent(mainFile);
+		return p;
 	}
 
-	public function autocomplete( program : Program , idx : Int ) : Array<String>{
-		
-		try{
-			prepareProgram( program );
-		}catch(err:String){
+
+	public function autocomplete (program:Program, idx:Int) : Array<String>
+	{
+		try {
+			prepareProgram(program);
+		} catch (err:String) {
 			return [];
 		}
 
 		var source = program.main.source;
 		
 		var args = [
-			"-cp" , tmpDir,
-			"-main" , program.main.name,
+			"-cp", tmpDir,
+			"-main", program.main.name,
 			"-v",
-			"--display" , tmpDir + "/" + program.main.name + ".hx@" + idx
+			"--display", tmpDir + "/" + program.main.name + ".hx@" + idx
 		];
 
 		switch (program.target) {
@@ -143,69 +95,29 @@ class Compiler {
 				args.push("-swf");
 				args.push("dummy.swf");
 				args.push("-swf-version");
-				args.push(Std.string(version));
+				args.push(version.string());
 		}
 
-		addLibs(args, program);
+		args.concat(program.options);
 
-		var out = runHaxe( args );
-
-		try{
-			var xml = new haxe.xml.Fast( Xml.parse( out.err ).firstChild() );
-			var words = [];
-
-			for( e in xml.nodes.i ){
+		var out   = runHaxe(args);
+		var words = [];
+		try {
+			var xml = new haxe.xml.Fast(Xml.parse(out.err).firstChild());
+			for(e in xml.nodes.i) {
 				var w = e.att.n;
-				if( !words.has( w ) )
-					words.push( w );
-
+				if (!words.has(w))
+					words.push(w);
 			}
-			return words;
-
-		}catch(e:Dynamic){
-			return [];
-		}
-
-		return [];
-		
+		} catch (e:Dynamic) {}
+		return words;
 	}
 
-	function addLibs(args:Array<String>, program:Program, ?html:HTMLConf) 
-	{
-		var availableLibs = switch( program.target ){
-			case JS(_) : Libs.available.js;
-			case SWF(_,_) : Libs.available.swf;
-		}
-		for( l in availableLibs ){
-			if( program.libs.has( l.name ) ){
-				if (html != null)
-				{
-					if (l.head != null) html.head = html.head.concat(l.head);
-					if (l.body != null) html.body = html.body.concat(l.body);
-				}
-				if (l.swf != null)
-				{
-					args.push("-swf-lib");
-					args.push("../../lib/swf/" + l.swf.src);
-				}
-				else
-				{
-					args.push("-lib");
-					args.push(l.name);
-				}
-				if( l.args != null ) 
-					for( a in l.args ){
-						args.push(a);
-					}
-			}
-		}
-		
-	}
 
-	public function compile( program : Program ){
-		try{
-			prepareProgram( program );
-		}catch(err:String){
+	public function compile (program:Program) {
+		try {
+			prepareProgram(program);
+		} catch (err:String) {
 			return {
 				uid : program.uid,
 				args : [],
@@ -220,86 +132,61 @@ class Compiler {
 		}
 
 		var args = [
-			"-cp" , tmpDir,
-			"-main" , program.main.name,
+			"-cp", tmpDir,
+			"-main", program.main.name,
 			"--times",
-			//"--dce", "full"
-			"--dead-code-elimination"
+#if haxe3	"--dce", "full"
+#else		"--dead-code-elimination" #end
 		];
 
 		var outputPath : String;
 		var htmlPath : String = tmpDir + "/" + "index.html";
 		var runUrl = Api.base + "/program/"+program.uid+"/run";
 		
-		var html:HTMLConf = {head:[], body:[]};
+		var html = {head:[], body:[]};
 
-		switch( program.target ){
-			case JS( name ):
-				Api.checkSanity( name );
+		switch(program.target) {
+			case JS(name):
+				Api.checkSanity(name);
 				outputPath = tmpDir + "/" + name + ".js";
-				args.push( "-js" );
-				args.push( outputPath );
+				args.push("-js");	args.push(outputPath);
 				args.push("--js-modern");
-				args.push("-D");
-				args.push("noEmbedJS");
+				args.push("-D");	args.push("noEmbedJS");
 				html.body.push("<script src='//ajax.googleapis.com/ajax/libs/jquery/1.7.1/jquery.min.js'></script>");
 				html.body.push('<script>window.jQuery || document.write("<script src=\'../../../lib/jquery.min.js\'><\\/script>")</script>');
-				
-				
 
-			case SWF( name , version ):
-				Api.checkSanity( name );
+			case SWF(name, version):
+				Api.checkSanity(name);
 				outputPath = tmpDir + "/" + name + ".swf";
-				
-				args.push( "-swf" );
-				args.push( outputPath );
-				args.push( "-swf-version" );
-				args.push( Std.string( version ) );
+				args.push("-swf");			args.push(outputPath);
+				args.push("-swf-version");	args.push(version.string());
 				args.push("-debug");
 				html.head.push("<link rel='stylesheet' href='"+Api.root+"/swf.css' type='text/css'/>");
 				html.head.push("<script src='"+Api.root+"/lib/swfobject.js'></script>");
-				html.head.push('<script type="text/javascript">swfobject.embedSWF("'+Api.base+"/"+outputPath+'?r='+Math.random()+'", "flashContent", "100%", "100%", "'+version+'.0.0" , null , {} , {wmode:"direct", scale:"noscale"})</script>');
+				html.head.push('<script type="text/javascript">swfobject.embedSWF("'+Api.base+"/"+outputPath+'?r='+Math.random()+'", "flashContent", "100%", "100%", "'+version+'.0.0", null, {}, {wmode:"direct", scale:"noscale"})</script>');
 				html.body.push('<div id="flashContent"><p><a href="http://www.adobe.com/go/getflashplayer"><img src="http://www.adobe.com/images/shared/download_buttons/get_flash_player.gif" alt="Get Adobe Flash player" /></a></p></div>');
 		}
 
-		addLibs(args, program, html);
-		//trace(args);
-		
-		var out = runHaxe( args );
-		var err = out.err.split( tmpDir + "/" ).join("");
-		var errors = err.split("
-");
+		args.concat(program.options);
+		var out = runHaxe(args);
+		var err = out.err.split(tmpDir + "/").join("");
+		var errors = err.split("\n");
 
-		var output : Program.Output = if( out.exitCode == 0 ){
-			{
-				uid : program.uid,
-				stderr : err,
-				stdout : out.out,
-				args : args,
-				errors : [],
-				success : true,
-				message : "Build success!",
-				href : runUrl,
-				source : ""
-			}
-		}else{
-			{
-				uid : program.uid,
-				stderr : err,
-				stdout : out.out,
-				args : args,
-				errors : errors,
-				success : false,
-				message : "Build failure",
-				href : "",
-				source : ""
-			}
-		}
+		var output = {
+				uid:     program.uid,
+				stderr:  err,
+				stdout:  out.out,
+				args:    args,
+				errors:  errors,
+				success: out.exitCode == 0,
+				message: out.exitCode == 0 ? "Build success!" : "Build failure",
+				href:    out.exitCode == 0 ? runUrl : "",
+				source:  ""};
 
 		if (out.exitCode == 0)
 		{
 			switch (program.target) {
-				case JS(_): 
+				case JS(_):
 					output.source = File.getContent(outputPath);
 					html.body.push("<script>" + output.source + "</script>");
 				default:
@@ -313,31 +200,21 @@ class Compiler {
 
 			File.saveContent(htmlPath, h.toString());
 		}
-		else
-		{
-			if (FileSystem.exists(htmlPath)) FileSystem.deleteFile(htmlPath);
-		}
+		else if (FileSystem.exists(htmlPath))
+			FileSystem.deleteFile(htmlPath);
 		
 		return output;
 	}
 
-	function runHaxe( args : Array<String> ){
-		
-		var proc = new sys.io.Process( "haxe" , args );
-		
-		var exit = proc.exitCode();
-		var out = proc.stdout.readAll().toString();
-		var err = proc.stderr.readAll().toString();
-		
-		var o = {
-			proc : proc,
-			exitCode : exit,
-			out : out,
-			err : err
+
+	private inline function runHaxe (args:Array<String>)
+	{
+		var proc = new sys.io.Process("haxe", args);
+		return {
+			proc:     proc,
+			exitCode: proc.exitCode(),
+			out:      proc.stdout.readAll().toString(),
+			err:      proc.stderr.readAll().toString()
 		};
-
-		return o;
-
 	}
-
 }

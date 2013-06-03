@@ -93,34 +93,28 @@ class TryHaxeEditor
     }
 
     
-    private function initLibs ()
+    private function initLibs (available:Array<String>, target:String)
     {
-        for (t in ["swf","js"]) {
-            var el = libs.find("."+t+"-libs");
-            var libs : Array<Libs.LibConf> = Reflect.field(Libs.available, t);
-            for (l in libs)
-                el.append(
-                    '<label class="checkbox"><input class="lib" type="checkbox" value="' + l.name + '" ' 
-                    + ((Libs.defaultChecked.has(l.name) /*|| selectedLib(l.name)*/) ? "checked='checked'" : "") 
-                    + '" /> ' + l.name 
-                    + "<span class='help-inline'><a href='" + (l.swf == null ? "http://lib.haxe.org/p/" + l.name : l.swf.help) 
-                    +"' target='_blank'><i class='icon-question-sign'></i></a></span>"
-                    + "</label>"
-                   );
-        }
+        var el = libs.find("."+target+"-libs");
+        for (lib in available)
+            el.append(
+                '<label class="checkbox"><input class="lib" type="checkbox" value="' + lib + '" ' 
+                + ((Libs.defaultChecked.has(lib) /*|| selectedLib(lib)*/) ? "checked='checked'" : "") 
+                + '" /> ' + lib
+                + "<span class='help-inline'><a href='" + (lib == null ? "http://lib.haxe.org/p/" + lib : lib) 
+                +"' target='_blank'><i class='icon-question-sign'></i></a></span>"
+                + "</label>"
+               );
     }
 
 
     private function onProgramLoaded (p:Program)
     {
-        if (p.libs != null)
-            for (lib in libs.find("input.lib")) {
-                if (p.libs.has(lib.val()))  lib.attr("checked","checked");
-                else                        lib.removeAttr("checked");
-            }
-        else
-            for (lib in libs.find("input.lib:checked"))
-                lib.removeAttr("checked");
+        libs.find('input.lib').removeAttr('checked');
+        if (p.options != null)
+            for (lib in libs.find("input.lib"))
+                if (p.options.has(lib.val()))
+                    lib.attr("checked","checked");
     }
 
 
@@ -159,7 +153,8 @@ class TryHaxeEditor
     private function handleLoaded ()
     {
         updateTargetCheckbox();
-        initLibs();
+        initLibs(Libs.available.js, "js");
+        initLibs(Libs.available.swf, "swf");
     }
 
 
@@ -174,10 +169,11 @@ class TryHaxeEditor
             case SWF(_,_) : "swf";
         }
         var inputs = new JQuery(editorId+".hx-options .hx-libs ."+sel+"-libs input.lib:checked");
-        for (i in inputs)
+        for (i in inputs) {
+            libs.push('-lib');
             libs.push(i.val());
-
-        editor.program.libs = libs;
+        }
+        editor.program.options = libs;
     }
 
 

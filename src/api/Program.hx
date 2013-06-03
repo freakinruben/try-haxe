@@ -4,7 +4,7 @@ typedef Program = {
 	uid : String,
 	main : Module,
 	target : Target,
-	libs:Array<String>,
+	options:Array<String>,	//compiler options
 //	?modules : Hash<Module>,
 }
 

@@ -101,7 +101,7 @@ class Editor
                 source: haxeSource.getValue()
             },
             target: toTarget(options.defaultTarget),
-            libs: new Array()
+            options: []
         });
     }
 
@@ -267,8 +267,7 @@ class Editor
         //if (e != null) e.preventDefault();
         clearErrors();
         updateProgram();
-        trace(cnx.Compiler.compile);
-        cnx.Compiler.compile.call( [program] , onCompiled );
+        cnx.Compiler.compile.call([program], onCompiled);
     }
 
 
