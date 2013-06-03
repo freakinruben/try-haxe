@@ -1,11 +1,13 @@
 -cp src
 -php app
--main App
+-main tryhaxe.App
+--dead-code-elimination
 
 --next
+--dead-code-elimination
 -cp lib/haxe-bootstrap
 -D noEmbedBootstrap
 -D noEmbedJS
 -cp src
 -js app.js
--main App
+-main tryhaxe.App

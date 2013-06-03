@@ -1,8 +1,9 @@
-import api.Program;
-import haxe.remoting.HttpAsyncConnection;
-import js.codemirror.CodeMirror;
-import js.JQuery;
- using StringTools;
+package tryhaxe;
+ import tryhaxe.api.Program;
+ import haxe.remoting.HttpAsyncConnection;
+ import js.codemirror.CodeMirror;
+ import js.JQuery;
+  using StringTools;
 
 typedef EditorOptions = {
     className: String,
@@ -138,8 +139,8 @@ class Editor
     public inline function toTarget (target:Int) {
         var n = options.className.toLowerCase();
         return switch(target) {
-            case SWF: api.Program.Target.SWF(n,11);
-            case JS:  api.Program.Target.JS(n);
+            case SWF: tryhaxe.api.Program.Target.SWF(n,11);
+            case JS:  tryhaxe.api.Program.Target.JS(n);
             default:  throw "Unknown target "+target;
         };
     }

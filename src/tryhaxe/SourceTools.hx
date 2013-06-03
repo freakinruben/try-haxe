@@ -1,4 +1,5 @@
-using Lambda;
+package tryhaxe;
+  using Lambda;
 
 class SourceTools {
 	public static function indexToPos (src :String, idx:Int) : {line:Int , ch:Int} {

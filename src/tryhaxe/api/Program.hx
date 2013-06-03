@@ -1,4 +1,4 @@
-package api;
+package tryhaxe.api;
 
 typedef Program = {
 	uid : String,

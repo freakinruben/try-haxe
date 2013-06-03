@@ -1,4 +1,4 @@
-package api;
+package tryhaxe.api;
  import sys.FileSystem;
  import sys.io.File;
   using Lambda;
@@ -55,7 +55,7 @@ class Compiler
 	}
 
 
-	public function getProgram (uid:String):Program
+	@:keep public function getProgram (uid:String):Program
 	{
 		Api.checkSanity(uid);
 		if (!FileSystem.isDirectory(Api.tmp + "/" + uid))
@@ -69,7 +69,7 @@ class Compiler
 	}
 
 
-	public function autocomplete (program:Program, idx:Int) : Array<String>
+	@:keep public function autocomplete (program:Program, idx:Int) : Array<String>
 	{
 		try {
 			prepareProgram(program);
@@ -111,7 +111,7 @@ class Compiler
 	}
 
 
-	public function compile (program:Program) {
+	@:keep public function compile (program:Program) {
 		try {
 			prepareProgram(program);
 		} catch (err:String) {

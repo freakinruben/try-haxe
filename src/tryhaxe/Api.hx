@@ -1,7 +1,8 @@
-class Api {
-
-	var program:api.Program;
-	var dir:String;
+package tryhaxe;
+class Api
+{
+	var program : tryhaxe.api.Program;
+	var dir     : String;
 	public  static var base:String;
 	public  static var root:String;
 	public  static var tmp = "../tmp";
@@ -18,7 +19,7 @@ class Api {
 
 	public function doCompiler() {
 		var ctx = new haxe.remoting.Context();
-    	ctx.addObject("Compiler",new api.Compiler());
+    	ctx.addObject("Compiler",new tryhaxe.api.Compiler());
     	haxe.remoting.HttpConnection.handleRequest(ctx);
 	}
 

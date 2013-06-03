@@ -1,3 +1,4 @@
+package tryhaxe;
 class App {
 #if js
     public static function main () {

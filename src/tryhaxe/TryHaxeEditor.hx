@@ -1,4 +1,5 @@
-import api.Program;
+package tryhaxe;
+import tryhaxe.api.Program;
 import js.JQuery;
  using js.bootstrap.Button;
  using Lambda;
@@ -50,8 +51,8 @@ class TryHaxeEditor
         targets.delegate("input.hx-target", "change", changeTarget);
         compileBtn.bind("click", function (_) editor.compile());
 
-        initLibs(Libs.available.js, "js");
-        initLibs(Libs.available.swf, "swf");
+        initLibs(tryhaxe.Libs.js, "js");
+        initLibs(tryhaxe.Libs.swf, "swf");
 
         var uid = js.Lib.window.location.hash;
         if (uid.length > 0) editor.loadProgram(uid.substr(1));
