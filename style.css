@@ -88,9 +88,9 @@ body {
 .span-fb, .span-plusone, .span-twitter {
 	padding:8px;
 }
-.fullscreen-source .hx-source,
+.fullscreen-source .js-source,
 .fullscreen-runner .js-run {
-	position:absolute;
+	position:fixed;
 	top:0;
 	left:0;
 	width:100%;

@@ -83,7 +83,7 @@ class Editor
 
         CodeMirror.commands.autocomplete     = autocomplete;
         CodeMirror.commands.compile          = function(_) compile();
-        CodeMirror.commands.togglefullscreen = toggleFullscreenSource;
+        CodeMirror.commands.togglefullscreen = function(_) openFullScreen();
 
         // Initialize UI
         haxeSource = CodeMirror.fromTextArea( cast new JQuery("#"+id+" textarea[name='hx-source']")[0], options.haxeCode );
@@ -94,6 +94,12 @@ class Editor
             jsSource = CodeMirror.fromTextArea(cast new JQuery("#"+id+" textarea[name='js-source']")[0], options.jsOutput);
         
         cnx = HttpAsyncConnection.urlConnect(options.apiURI);
+        //listen for changes in fullscreen
+        untyped __js__("var api = window.fullScreenApi;
+            window.document.documentElement.addEventListener(api.fullScreenEventName, function () {
+                if (api.isFullScreen()) { jQuery('body').addClass('fullscreen-runner'); }
+                else { jQuery('body').removeClass('fullscreen-runner'); }
+            });");
     }
 
 
@@ -152,16 +158,8 @@ class Editor
     //
 
 
-    public function fullscreen () {
-         untyped __js__("var el = window.document.documentElement;
-                        var rfs = el.requestFullScreen || el.webkitRequestFullScreen || el.mozRequestFullScreen;
-                        rfs.call(el); ");
-    }
-
-    private function toggleFullscreenSource (_) {
-        new JQuery("body").toggleClass("fullscreen-source");
-        haxeSource.refresh();
-        fullscreen();
+    public inline function openFullScreen () {
+         untyped __js__("window.fullScreenApi.requestFullScreen(window.document.documentElement);");
     }
 
 
@@ -211,7 +209,6 @@ class Editor
     {
         updateProgram();
         var src = cm.getValue();
-
         var idx = SourceTools.getAutocompleteIndex(src, cm.getCursor());
         if (idx == null)
             return;
@@ -230,18 +227,15 @@ class Editor
 
     private function showHint (cm:CodeMirror)
     {
-        var src = cm.getValue();
-        var cursor = cm.getCursor();
-        var from = SourceTools.indexToPos(src, SourceTools.getAutocompleteIndex(src, cursor));
-        var to = cm.getCursor();
-
+        var src   = cm.getValue();
+        var from  = SourceTools.indexToPos(src, SourceTools.getAutocompleteIndex(src, cm.getCursor()));
+        var to    = cm.getCursor();
         var token = src.substring(SourceTools.posToIndex(src, from), SourceTools.posToIndex(src, to));
-        var list = [];
+        var list  = [];
 
         for (c in completions)
-            if (c.toLowerCase().startsWith(token.toLowerCase())) {
+            if (c.toLowerCase().startsWith(token.toLowerCase()))
                 list.push(c);
-            }
 
         return {list: list, from: from, to: to};
     }
@@ -265,7 +259,7 @@ class Editor
     // COMPILE
     //
 
-    public function compile () //(?e)
+    public inline function compile () //(?e)
     {
         //if (e != null) e.preventDefault();
         clearErrors();

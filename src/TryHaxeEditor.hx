@@ -106,27 +106,16 @@ class TryHaxeEditor
     public function toggleFullscreenRunner (e:JqEvent) {
         var _this = new JQuery(e.target);
         e.preventDefault();
-        if (_this.attr('href') != "#") {
-            new JQuery("body").addClass("fullscreen-runner");
-            editor.fullscreen();
-        }
+        if (_this.attr('href') != "#")
+            editor.openFullScreen();
     }
 
 
     public function onKey (e:JqEvent)
     {
-         /*if (e.keyCode == 27) { // Escape
-                new JQuery("body").removeClass("fullscreen-source fullscreen-runner");
-         }*/
-         if (e.keyCode == 122) {
-                var b = new JQuery("body");
-                if (b.hasClass("fullscreen-runner")) {
-                    b.removeClass("fullscreen-runner");
-                }
-         }
          if ((e.ctrlKey && e.keyCode == 13) || e.keyCode == 119) { // Ctrl+Enter and F8
-                e.preventDefault();
-                editor.compile();
+            e.preventDefault();
+            editor.compile();
          }
     }
 
