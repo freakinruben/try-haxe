@@ -29,10 +29,6 @@ typedef HistorySize = {
 	redo : Int
 };
 
-typedef TextMarker = {
-	clear : Void->Void,
-	find : Void->Pos
-};
 typedef TextMarkerOptions = {
 	?className : String,
 	?inclusiveLeft : Bool,
@@ -53,7 +49,9 @@ typedef BookmarkOptions = {
 	?insertLeft : Bool
 };
 
-typedef LineHandle = {};
+typedef LineHandle = {
+	line : Int,
+};
 typedef LineInfo = {
 	line : Int,
 	handle : Dynamic, //FIXME LineHandle?
@@ -96,10 +94,22 @@ typedef Token = {
 	string : String,
 	state : Mode
 };
+typedef HintOutput = {
+	list : Array<String>,
+	from : Pos,
+	to : Pos
+}
+typedef HintOptions = {
+	async : Bool,
+	completeSingle : Bool,
+	alignWithWord : Bool,
+	customKeys : Dynamic,
+};
 
 @:native('CodeMirror') extern class CodeMirror {
 	public static var version (default, null) : String;
 	public static var defaults (default,null) : Dynamic;
+	public static var commands (default,null) : Dynamic<CodeMirror->Void>;
 
 	public static function fromTextArea( textarea : TextArea , ?config : Dynamic ) : CodeMirror;
 	public static function defineExtension(name:String, value:Dynamic) : Void;
@@ -177,6 +187,9 @@ typedef Token = {
 	public function getWrapperElement() : Element;
 	public function getScrollerElement() : Element;
 	public function getGutterElement() : Element;
+
+	//EXTENSIONS
+	public static function showHint (cm:CodeMirror, f:CodeMirror->Dynamic->HintOutput, ?options:HintOptions) : Void;
 }
 
 @:native('Doc') extern class Doc {
@@ -225,7 +238,6 @@ typedef Token = {
 	public function getHistory() : Dynamic;
 	public function setHistory(h:Dynamic) : Void;
 
-	
 	public function markText(from:Pos, to:Pos, ?options:TextMarkerOptions ) : TextMarker;
 	public function setBookmark(pos:Pos, ?options:BookmarkOptions) : TextMarker;
 	public function findMarksAt(pos:Pos) : Array<TextMarker>;
@@ -242,7 +254,20 @@ typedef Token = {
 	public function clear () : Void;
 	public function changed () : Void;
 }
-
+@:native('TextMarker') extern class TextMarker {
+	public function clear () : Void;
+	public function find () : Pos;
+	public function changed () : Void;
+	public function attachLine (l:LineHandle) : Void;
+	public function detachLine (l:LineHandle) : Void;
+}
+@:native('LeafChunk') extern class LeafChunk {
+	public function chunkSize () : Int;
+	public function removeInner (at:Int, n:Int) : Void;
+	public function collapse (lines:Array<LineHandle>) : Void;
+	public function insertInner (at:Int, lines:Array<LineHandle>, height:Int) : Void;
+	public function iterN (at:Int, n:Int, f:LineHandle->Bool) : Bool;
+}
 @:native('Mode') extern class Mode {
 	public function eol () : Bool;
 	public function sol() : Bool;

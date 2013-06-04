@@ -109,7 +109,7 @@ class Editor
             uid: null,
             main: {
                 name:   options.className,
-                source: haxeSource.getValue()
+                source: haxeSource.getDoc().getValue()
             },
             target: toTarget(options.defaultTarget),
             options: []
@@ -183,7 +183,7 @@ class Editor
     {
         program = p;        // sharing
         p.uid   = null;     // auto-fork
-        haxeSource.setValue(p.main.source);
+        haxeSource.getDoc().setValue(p.main.source);
         if (handleLoaded != null)
             handleLoaded();
     }
@@ -200,7 +200,7 @@ class Editor
      */
     private function updateProgram ()
     {
-        program.main.source = haxeSource.getValue();
+        program.main.source = haxeSource.getDoc().getValue();
         if (handleCompile != null)
             handleCompile();
     }
@@ -209,8 +209,8 @@ class Editor
     private function autocomplete (cm:CodeMirror)
     {
         updateProgram();
-        var src = cm.getValue();
-        var idx = SourceTools.getAutocompleteIndex(src, cm.getCursor());
+        var src = cm.getDoc().getValue();
+        var idx = SourceTools.getAutocompleteIndex(src, cm.getDoc().getCursor());
         if (idx == null)
             return;
 
@@ -226,11 +226,11 @@ class Editor
     }
 
 
-    private function showHint (cm:CodeMirror)
+    private function showHint (cm:CodeMirror, ?opt:Dynamic)
     {
-        var src   = cm.getValue();
-        var from  = SourceTools.indexToPos(src, SourceTools.getAutocompleteIndex(src, cm.getCursor()));
-        var to    = cm.getCursor();
+        var src   = cm.getDoc().getValue();
+        var from  = SourceTools.indexToPos(src, SourceTools.getAutocompleteIndex(src, cm.getDoc().getCursor()));
+        var to    = cm.getDoc().getCursor();
         var token = src.substring(SourceTools.posToIndex(src, from), SourceTools.posToIndex(src, to));
         var list  = [];
 
@@ -245,7 +245,7 @@ class Editor
     private function displayCompletions (cm:CodeMirror, comps:Array<String>)
     {
         completions = comps;
-        CodeMirror.simpleHint(cm , showHint);
+        CodeMirror.showHint(cm , showHint);
     }
 
 
@@ -276,7 +276,7 @@ class Editor
         if (!o.success)
             markErrors();
         else {
-            jsSource.setValue(o.source);
+            jsSource.getDoc().setValue(o.source);
             jsSource.refresh();
         }
 
@@ -293,7 +293,7 @@ class Editor
     private inline function clearErrors ()
     {
         for (m in markers)      m.clear();
-        for (l in lineHandles)  haxeSource.clearMarker(l);
+        for (l in lineHandles)  haxeSource.setGutterMarker(haxeSource.getDoc().getLineNumber(l), null, null);
         markers = [];
     }
 
@@ -312,8 +312,8 @@ class Editor
                     msg:  errLine.matched(5)
                 };
                 if (StringTools.trim(err.file) == options.className + ".hx") {
-                    lineHandles.push(haxeSource.setMarker(err.line, "<i class='icon-warning-sign icon-white'></i>" , "error"));
-                    markers    .push(haxeSource.markText({line: err.line, ch: err.from}, {line: err.line, ch: err.to}, "error"));
+                    lineHandles.push(haxeSource.setGutterMarker(err.line, "error", new JQuery("<i class='icon-warning-sign icon-white'></i>").toArray()[0]));
+                    markers    .push(haxeSource.getDoc().markText({line: err.line, ch: err.from}, {line: err.line, ch: err.to}, {className: "error"}));
                 }
             }
     }
