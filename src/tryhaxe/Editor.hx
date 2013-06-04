@@ -61,6 +61,7 @@ class Editor
 
     public var options    (default, null) : EditorOptions;
     public var haxeSource (default, null) : CodeMirror;
+    public var haxeDoc    (default, null) : Doc;
     public var jsSource   (default, null) : CodeMirror;
     public var program    (default, null) : Program;
     public var output     (default, null) : Output;
@@ -90,6 +91,7 @@ class Editor
         haxeSource = CodeMirror.fromTextArea( cast new JQuery("#"+id+" textarea[name='hx-source']")[0], options.haxeCode );
         haxeSource.setOption("onChange",  onCodeChange);
         haxeSource.setOption("extraKeys", options.editorKeys);
+        haxeDoc = haxeSource.getDoc();
 
         if (options.jsOutput != null)
             jsSource = CodeMirror.fromTextArea(cast new JQuery("#"+id+" textarea[name='js-source']")[0], options.jsOutput);
@@ -104,24 +106,12 @@ class Editor
     }
 
 
-    public function startNewProgram () {
-        onProgramLoaded({
-            uid: null,
-            main: {
-                name:   options.className,
-                source: haxeSource.getDoc().getValue()
-            },
-            target: toTarget(options.defaultTarget),
-            options: []
-        });
-    }
-
-
     public inline function dispose ()
     {
         haxeSource.setOption("extraKeys", null);
         haxeSource.setOption("onChange", null); //FIXME doesn't seem to remove eventlistener
         haxeSource = null;
+        haxeDoc = null;
         jsSource = null;
 
         jsSource = null;
@@ -133,6 +123,19 @@ class Editor
         handleLoaded = null;
         handleCompile = null;
         handleCompiled = null;
+    }
+
+
+    public function startNewProgram () {
+        onProgramLoaded({
+            uid: null,
+            main: {
+                name:   options.className,
+                source: haxeDoc.getValue()
+            },
+            target: toTarget(options.defaultTarget),
+            options: []
+        });
     }
 
 
@@ -183,7 +186,7 @@ class Editor
     {
         program = p;        // sharing
         p.uid   = null;     // auto-fork
-        haxeSource.getDoc().setValue(p.main.source);
+        haxeDoc.setValue(p.main.source);
         if (handleLoaded != null)
             handleLoaded();
     }
@@ -200,7 +203,7 @@ class Editor
      */
     private function updateProgram ()
     {
-        program.main.source = haxeSource.getDoc().getValue();
+        program.main.source = haxeDoc.getValue();
         if (handleCompile != null)
             handleCompile();
     }
@@ -209,8 +212,9 @@ class Editor
     private function autocomplete (cm:CodeMirror)
     {
         updateProgram();
-        var src = cm.getDoc().getValue();
-        var idx = SourceTools.getAutocompleteIndex(src, cm.getDoc().getCursor());
+        var doc = cm.getDoc();
+        var src = doc.getValue();
+        var idx = SourceTools.getAutocompleteIndex(src, doc.getCursor());
         if (idx == null)
             return;
 
@@ -228,9 +232,10 @@ class Editor
 
     private function showHint (cm:CodeMirror, ?opt:Dynamic)
     {
-        var src   = cm.getDoc().getValue();
-        var from  = SourceTools.indexToPos(src, SourceTools.getAutocompleteIndex(src, cm.getDoc().getCursor()));
-        var to    = cm.getDoc().getCursor();
+        var doc   = cm.getDoc();
+        var src   = doc.getValue();
+        var from  = SourceTools.indexToPos(src, SourceTools.getAutocompleteIndex(src, doc.getCursor()));
+        var to    = doc.getCursor();
         var token = src.substring(SourceTools.posToIndex(src, from), SourceTools.posToIndex(src, to));
         var list  = [];
 
@@ -293,7 +298,7 @@ class Editor
     private inline function clearErrors ()
     {
         for (m in markers)      m.clear();
-        for (l in lineHandles)  haxeSource.setGutterMarker(haxeSource.getDoc().getLineNumber(l), null, null);
+        for (l in lineHandles)  haxeSource.setGutterMarker(haxeDoc.getLineNumber(l), null, null);
         markers = [];
     }
 
@@ -313,7 +318,7 @@ class Editor
                 };
                 if (StringTools.trim(err.file) == options.className + ".hx") {
                     lineHandles.push(haxeSource.setGutterMarker(err.line, "error", new JQuery("<i class='icon-warning-sign icon-white'></i>").toArray()[0]));
-                    markers    .push(haxeSource.getDoc().markText({line: err.line, ch: err.from}, {line: err.line, ch: err.to}, {className: "error"}));
+                    markers    .push(haxeDoc.markText({line: err.line, ch: err.from}, {line: err.line, ch: err.to}, {className: "error"}));
                 }
             }
     }
@@ -330,12 +335,13 @@ class Editor
         if (opt.haxeCode.theme != 'default')
             new JQuery('head').append('<link rel="stylesheet" href="'+opt.root+'lib/CodeMirror2/theme/'+opt.haxeCode.theme+'.css"/>');
         
-        new JQuery('body').append('
-            <script src="'+opt.root+'lib/CodeMirror2/lib/codemirror.js"></script>
-            <script src="'+opt.root+'lib/CodeMirror2/mode/haxe/haxe.js"></script>
-            <script src="'+opt.root+'lib/CodeMirror2/mode/javascript/javascript.js"></script>
-            <script src="'+opt.root+'lib/haxe-hint.js"></script>
-        ');
+        new JQuery('body').append(
+            '<script src="'+opt.root+'lib/CodeMirror2/lib/codemirror.js"></script>'+
+            '<script src="'+opt.root+'lib/CodeMirror2/mode/haxe/haxe.js"></script>'+
+            '<script src="'+opt.root+'lib/CodeMirror2/mode/javascript/javascript.js"></script>'+
+            //'<script src="'+opt.root+'lib/CodeMirror2/addon/hint/show-hint.js"></script>'+
+            '<script src="'+opt.root+'lib/haxe-hint.js"></script>'
+        );
         loadedResources = true;
     }
 }

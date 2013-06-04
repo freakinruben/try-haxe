@@ -98,7 +98,7 @@ typedef HintOutput = {
 	list : Array<String>,
 	from : Pos,
 	to : Pos
-}
+};
 typedef HintOptions = {
 	async : Bool,
 	completeSingle : Bool,
