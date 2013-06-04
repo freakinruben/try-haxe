@@ -1,9 +1,9 @@
 package tryhaxe;
-import tryhaxe.api.Program;
-import js.JQuery;
- using js.bootstrap.Button;
- using Lambda;
- using Std;
+ import tryhaxe.api.Program;
+ import js.JQuery;
+  using js.bootstrap.Button;
+  using Lambda;
+  using Std;
 
 class TryHaxeEditor
 {
@@ -79,10 +79,10 @@ class TryHaxeEditor
     private function updateTargetCheckbox ()
     {
         libs.find(".controls").hide();
-        var sel:String;
+        var sel = Type.enumConstructor(editor.program.target).toLowerCase();
         switch (editor.program.target) {
-            case JS(_):    sel = "js";  jsTab.fadeIn();
-            case SWF(_,_): sel = "swf"; jsTab.hide();
+            case JS(_):    jsTab.fadeIn();
+            case SWF(_,_): jsTab.hide();
         }
         new JQuery(editorId+"input#target-"+editorId.substr(1,editorId.length - 2)+"-"+sel).attr('checked' ,'checked');
         libs.find("."+sel+"-libs").fadeIn();
@@ -142,10 +142,7 @@ class TryHaxeEditor
         compileBtn.buttonLoading();
 
         var libs = new Array();
-        var sel = switch (editor.program.target) {
-            case JS(_): "js";
-            case SWF(_,_) : "swf";
-        }
+        var sel = Type.enumConstructor(editor.program.target).toLowerCase();
         var inputs = new JQuery(editorId+".hx-options .hx-libs ."+sel+"-libs input.lib:checked");
         for (i in inputs) {
             libs.push('-lib');

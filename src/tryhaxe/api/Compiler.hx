@@ -37,12 +37,12 @@ class Compiler
 		Api.checkSanity(program.uid);
 		Api.checkSanity(program.main.name);
 
-		tmpDir = Api.tmp + "/" + program.uid;
+		tmpDir = Api.tmp + "/" + program.uid + "/";
 
 		if (!FileSystem.isDirectory(tmpDir))
 			FileSystem.createDirectory(tmpDir);
 
-		mainFile   = tmpDir + "/" + program.main.name + ".hx";
+		mainFile   = tmpDir + program.main.name + ".hx";
 		var source = program.main.source;
 		checkMacros(source);
 		
@@ -61,9 +61,9 @@ class Compiler
 		if (!FileSystem.isDirectory(Api.tmp + "/" + uid))
 			return null;
 	
-		tmpDir = Api.tmp + "/" + uid;
+		tmpDir = Api.tmp + "/" + uid + "/";
 		var p:Program = haxe.Unserializer.run(File.getContent(tmpDir + "/program"));
-		mainFile = tmpDir + "/" + p.main.name + ".hx";
+		mainFile = tmpDir + p.main.name + ".hx";
 		p.main.source = File.getContent(mainFile);
 		return p;
 	}
@@ -83,7 +83,7 @@ class Compiler
 			"-cp", tmpDir,
 			"-main", program.main.name,
 			"-v",
-			"--display", tmpDir + "/" + program.main.name + ".hx@" + idx
+			"--display", tmpDir + program.main.name + ".hx@" + idx
 		];
 
 		switch (program.target) {
@@ -131,12 +131,12 @@ class Compiler
 			"-cp", tmpDir,
 			"-main", program.main.name,
 			"--times",
-#if haxe3	"--dce", "full"
+#if haxe3	"-dce", "full"
 #else		"--dead-code-elimination" #end
 		];
 
 		var outputPath : String;
-		var htmlPath : String = tmpDir + "/" + "index.html";
+		var htmlPath : String = tmpDir + "index.html";
 		var runUrl = Api.base + "/program/"+program.uid+"/run";
 		
 		var html = {head:[], body:[]};
@@ -144,16 +144,16 @@ class Compiler
 		switch(program.target) {
 			case JS(name):
 				Api.checkSanity(name);
-				outputPath = tmpDir + "/" + name + ".js";
+				outputPath = tmpDir + name + ".js";
 				args.push("-js");	args.push(outputPath);
-				args.push("--js-modern");
+#if !haxe3		args.push("--js-modern"); #end //default enabled in haxe3
 				args.push("-D");	args.push("noEmbedJS");
 				html.body.push("<script src='//ajax.googleapis.com/ajax/libs/jquery/1.7.1/jquery.min.js'></script>");
 				html.body.push('<script>window.jQuery || document.write("<script src=\'../../../lib/jquery.min.js\'><\\/script>")</script>');
 
 			case SWF(name, version):
 				Api.checkSanity(name);
-				outputPath = tmpDir + "/" + name + ".swf";
+				outputPath = tmpDir + name + ".swf";
 				args.push("-swf");			args.push(outputPath);
 				args.push("-swf-version");	args.push(version.string());
 				args.push("-debug");
@@ -163,7 +163,7 @@ class Compiler
 				html.body.push('<div id="flashContent"><p><a href="http://www.adobe.com/go/getflashplayer"><img src="http://www.adobe.com/images/shared/download_buttons/get_flash_player.gif" alt="Get Adobe Flash player" /></a></p></div>');
 		}
 		var out = runHaxe(args = args.concat(program.options));
-		var err = out.err.split(tmpDir + "/").join("");
+		var err = out.err.split(tmpDir).join("");
 		var errors = err.split("\n");
 
 		var output = {

@@ -1,6 +1,6 @@
 package js.codemirror;
 
-typedef Element = #if haxe3 js.html.Element #else js.Dom.HtmlDom #end;
+typedef Element = #if haxe3 js.html.HtmlElement #else js.Dom.HtmlDom #end;
 typedef TextArea = #if haxe3 js.html.TextAreaElement #else js.Dom.Textarea #end;
 
 typedef Completions = {
