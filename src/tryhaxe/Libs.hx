@@ -19,5 +19,6 @@ class Libs
 	];
 
 	/* array of lib names */
-	public static var defaultChecked : Array<String> = ["jeash"];
+	public static var defaultJsArgs : Array<String> = ["-lib", "jeash"];
+	public static var defaultSwfArgs : Array<String> = [];
 }

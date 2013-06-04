@@ -26,7 +26,10 @@ class TryHaxeEditor
 
         var options = Editor.defaultOptions();
         options.apiURI = new JQuery("body").data("api") + "/compiler";
-        editor = new Editor(id, options);
+        options.id = id;
+        options.defaultJsArgs = Libs.defaultJsArgs;
+        options.defaultSwfArgs = Libs.defaultSwfArgs;
+        editor = new Editor(options);
 
         editor.handleLoaded   = handleLoaded;
         editor.handleCompile  = handleCompile;
@@ -51,12 +54,14 @@ class TryHaxeEditor
         targets.delegate("input.hx-target", "change", changeTarget);
         compileBtn.bind("click", function (_) editor.compile());
 
-        initLibs(tryhaxe.Libs.js, "js");
-        initLibs(tryhaxe.Libs.swf, "swf");
+        initLibs(tryhaxe.Libs.js,  tryhaxe.Libs.defaultJsArgs,  "js");
+        initLibs(tryhaxe.Libs.swf, tryhaxe.Libs.defaultSwfArgs, "swf");
 
         var uid = js.Lib.window.location.hash;
         if (uid.length > 0) editor.loadProgram(uid.substr(1));
         else                editor.startNewProgram();
+
+        new JQuery("#haxe-version").text(#if haxe3 "3.0 release" #else "2.10 release" #end);
     }
 
 
@@ -72,14 +77,14 @@ class TryHaxeEditor
     private function changeTarget (e:JqEvent)
     {
         editor.program.target = editor.toTarget(new JQuery(e.target).val().parseInt());
-        updateTargetCheckbox();
+        updateTargetRadio();
     }
 
 
-    private function updateTargetCheckbox ()
+    private function updateTargetRadio ()
     {
         libs.find(".controls").hide();
-        var sel = Type.enumConstructor(editor.program.target).toLowerCase();
+        var sel = targetString();
         switch (editor.program.target) {
             case JS(_):    jsTab.fadeIn();
             case SWF(_,_): jsTab.hide();
@@ -89,18 +94,17 @@ class TryHaxeEditor
     }
 
     
-    private function initLibs (available:Array<String>, target:String)
+    private function initLibs (available:Array<String>, defaultLibs:Array<String>, target:String)
     {
         var el = libs.find("."+target+"-libs");
         for (lib in available)
             el.append(
                 '<label class="checkbox"><input class="lib" type="checkbox" value="' + lib + '" ' 
-                + ((Libs.defaultChecked.has(lib) /*|| selectedLib(lib)*/) ? "checked='checked'" : "") 
+                + ((defaultLibs.indexOf(lib) > -1 /*|| selectedLib(lib)*/) ? "checked='checked'" : "") 
                 + '" /> ' + lib
                 + "<span class='help-inline'><a href='" + (lib == null ? "http://lib.haxe.org/p/" + lib : lib) 
                 +"' target='_blank'><i class='icon-question-sign'></i></a></span>"
-                + "</label>"
-               );
+                + "</label>");
     }
 
 
@@ -127,12 +131,17 @@ class TryHaxeEditor
 
     private function handleLoaded ()
     {
-        updateTargetCheckbox();
-        libs.find('input.lib').removeAttr('checked');
+        updateTargetRadio();
+        libs.find('.'+targetString()+'-libs .input.lib').removeAttr('checked');
         if (editor.program.options != null)
             for (lib in libs.find("input.lib"))
                 if (editor.program.options.has(lib.val()))
                     lib.attr("checked","checked");
+    }
+
+
+    private inline function targetString () {
+        return Type.enumConstructor(editor.program.target).toLowerCase();
     }
 
 
@@ -142,8 +151,7 @@ class TryHaxeEditor
         compileBtn.buttonLoading();
 
         var libs = new Array();
-        var sel = Type.enumConstructor(editor.program.target).toLowerCase();
-        var inputs = new JQuery(editorId+".hx-options .hx-libs ."+sel+"-libs input.lib:checked");
+        var inputs = new JQuery(editorId+".hx-options .hx-libs ."+targetString()+"-libs input.lib:checked");
         for (i in inputs) {
             libs.push('-lib');
             libs.push(i.val());

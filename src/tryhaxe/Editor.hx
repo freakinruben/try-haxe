@@ -4,8 +4,10 @@ package tryhaxe;
  import js.codemirror.CodeMirror;
  import js.JQuery;
   using StringTools;
+  using Std;
 
 typedef EditorOptions = {
+    id: String,
     className: String,
     editorKeys: Dynamic,
     targets: Int,
@@ -13,7 +15,9 @@ typedef EditorOptions = {
     haxeCode: Dynamic,
     jsOutput: Dynamic,
     apiURI: String,
-    root: String
+    root: String,
+    defaultJsArgs: Array<String>,
+    defaultSwfArgs: Array<String>,
 };
 
 
@@ -24,23 +28,26 @@ class Editor
     public static inline var JS  = 0x02;
 
     /* Default options for setting up CodeMirror for the haxe-source */
-    public static inline function haxeOptions () { return {theme: "default", lineWrapping: true, lineNumbers: true,  mode: "haxe"}; }
+    public static inline function haxeOptions () { return {theme: "default", lineWrapping: true, lineNumbers: true,  mode: "haxe", styleActiveLine: true}; }
     /* Default options for setting up CodeMirror for the generated js-output */
     public static inline function jsOptions ()   { return {theme: "default", lineWrapping: true, lineNumbers: false, mode: "javascript", readOnly: true}; }
     /* Default key-bindings for CodeMirror of the haxe-source */
     public static inline function defaultKeys () { return {
-                "Ctrl-Space" : "autocomplete",
-                "Ctrl-Enter" : "compile",
-                "F8" : "compile",
-                "F5" : "compile",
-                "F11" : "togglefullscreen"
+        "Ctrl-Space" : "autocomplete",
+        "Ctrl-Enter" : "compile",
+        "F8" : "compile",
+        "F5" : "compile",
+        "F11" : "togglefullscreen"
     };}
     /* Default options for creating an haxe-editor */
     public static inline function defaultOptions () : EditorOptions { return {
+        id: '',
         className: 'Test',
         editorKeys: defaultKeys,
         targets: SWF | JS,
         defaultTarget: SWF,
+        defaultJsArgs: [],
+        defaultSwfArgs: [],
         haxeCode: haxeOptions(),
         jsOutput: jsOptions(),
         apiURI: "/compiler",
@@ -71,38 +78,56 @@ class Editor
     private var lineHandles     : Array<LineHandle>;
     private var completions     : Array<String>;
     private var completionIndex : Int;
+    private var initialized     : Bool;
 
 
     /**
-     * @param id          id of the wrapper element around the textfield
-     * @param o             editor-options
+     * @param id    id of the wrapper element around the textfield
+     * @param o     editor-options
      */
-    public function new (id:String, o:EditorOptions)
+    public function new (o:EditorOptions)
     {
-        loadResources(options = o);
+        initialized = false;
+        options = o;
+        cnx = HttpAsyncConnection.urlConnect(o.apiURI);
+
+        if (!loadedResources) {
+            loadResources(o);
+            haxe.Timer.delay(init, 150); //FIXME css and js files need to be loaded before editor is displayed, otherwise CodeMirror will get wrong size
+        } else
+            init();
+    }
+
+
+    private function init ()
+    {
         markers = [];
         lineHandles = [];
 
-        CodeMirror.commands.autocomplete     = autocomplete;
-        CodeMirror.commands.compile          = function(_) compile();
-        CodeMirror.commands.togglefullscreen = function(_) openFullScreen();
-
         // Initialize UI
-        haxeSource = CodeMirror.fromTextArea( cast new JQuery("#"+id+" textarea[name='hx-source']")[0], options.haxeCode );
+        haxeSource = CodeMirror.fromTextArea( cast new JQuery("#"+options.id+" textarea[name='hx-source']")[0], options.haxeCode );
         haxeSource.setOption("onChange",  onCodeChange);
         haxeSource.setOption("extraKeys", options.editorKeys);
         haxeDoc = haxeSource.getDoc();
 
         if (options.jsOutput != null)
-            jsSource = CodeMirror.fromTextArea(cast new JQuery("#"+id+" textarea[name='js-source']")[0], options.jsOutput);
-        
-        cnx = HttpAsyncConnection.urlConnect(options.apiURI);
+            jsSource = CodeMirror.fromTextArea(cast new JQuery("#"+options.id+" textarea[name='js-source']")[0], options.jsOutput);
+
+        CodeMirror.commands.autocomplete     = autocomplete;
+        CodeMirror.commands.compile          = function(_) compile();
+        CodeMirror.commands.togglefullscreen = function(_) openFullScreen();
+
         //listen for changes in fullscreen
         untyped __js__("var api = window.fullScreenApi;
             window.document.documentElement.addEventListener(api.fullScreenEventName, function () {
                 if (api.isFullScreen()) { jQuery('body').addClass('fullscreen-runner'); }
                 else { jQuery('body').removeClass('fullscreen-runner'); }
             });");
+        initialized = true;
+        if (program != null)
+            onProgramLoaded(program);
+        else
+            startNewProgram();
     }
 
 
@@ -126,7 +151,7 @@ class Editor
     }
 
 
-    public function startNewProgram () {
+    public function startNewProgram () if (initialized) {
         onProgramLoaded({
             uid: null,
             main: {
@@ -134,7 +159,7 @@ class Editor
                 source: haxeDoc.getValue()
             },
             target: toTarget(options.defaultTarget),
-            options: []
+            options: options.defaultTarget == JS ? options.defaultJsArgs : options.defaultSwfArgs
         });
     }
 
@@ -154,25 +179,17 @@ class Editor
         haxeSource.refresh();
     }
 
-
-
-
     //
     // FULLSCREEN
     //
-
 
     public inline function openFullScreen () {
          untyped __js__("window.fullScreenApi.requestFullScreen(window.document.documentElement);");
     }
 
-
-
-
     //
     // LOAD PROGRAM
     //
-
     
     /**
      * Loads an already compiled program
@@ -186,13 +203,12 @@ class Editor
     {
         program = p;        // sharing
         p.uid   = null;     // auto-fork
-        haxeDoc.setValue(p.main.source);
-        if (handleLoaded != null)
-            handleLoaded();
+        if (initialized) {
+            haxeDoc.setValue(p.main.source);
+            if (handleLoaded != null)
+                handleLoaded();
+        }
     }
-
-
-
 
     //
     // AUTOCOMPLETE
@@ -211,6 +227,7 @@ class Editor
 
     private function autocomplete (cm:CodeMirror)
     {
+        trace("autocomplete");
         updateProgram();
         var doc = cm.getDoc();
         var src = doc.getValue();
@@ -250,7 +267,7 @@ class Editor
     private function displayCompletions (cm:CodeMirror, comps:Array<String>)
     {
         completions = comps;
-        CodeMirror.showHint(cm , showHint);
+        CodeMirror.showHint(cm, showHint);
     }
 
 
@@ -311,9 +328,9 @@ class Editor
             if (errLine.match(e)) {
                 var err = {
                     file: errLine.matched(1),
-                    line: Std.parseInt(errLine.matched(2)) - 1,
-                    from: Std.parseInt(errLine.matched(3)),
-                    to:   Std.parseInt(errLine.matched(4)),
+                    line: errLine.matched(2).parseInt() - 1,
+                    from: errLine.matched(3).parseInt(),
+                    to:   errLine.matched(4).parseInt(),
                     msg:  errLine.matched(5)
                 };
                 if (StringTools.trim(err.file) == options.className + ".hx") {
@@ -327,7 +344,7 @@ class Editor
     // LOAD RESOURCES
     //
 
-    private static inline function loadResources (opt:EditorOptions) if (!loadedResources)
+    private static inline function loadResources (opt:EditorOptions)
     {
         new JQuery('head').append('
             <link rel="stylesheet" href="'+opt.root+'lib/CodeMirror2/lib/codemirror.css"/>
@@ -339,7 +356,7 @@ class Editor
             '<script src="'+opt.root+'lib/CodeMirror2/lib/codemirror.js"></script>'+
             '<script src="'+opt.root+'lib/CodeMirror2/mode/haxe/haxe.js"></script>'+
             '<script src="'+opt.root+'lib/CodeMirror2/mode/javascript/javascript.js"></script>'+
-            //'<script src="'+opt.root+'lib/CodeMirror2/addon/hint/show-hint.js"></script>'+
+            '<script src="'+opt.root+'lib/CodeMirror2/addon/hint/show-hint.js"></script>'+
             '<script src="'+opt.root+'lib/haxe-hint.js"></script>'
         );
         loadedResources = true;
