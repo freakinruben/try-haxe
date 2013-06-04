@@ -47,7 +47,7 @@ class TryHaxeEditor
             if (new JQuery(e.target).attr('href') == "#")
                 e.preventDefault();
         });
-        new JQuery(editorId+".fullscreen-btn").bind("click", toggleFullscreenRunner); 
+        //new JQuery(editorId+".fullscreen-btn").bind("click", toggleFullscreenRunner); 
         new JQuery("body").bind("keyup", onKey);
         new JQuery(editorId+"a[data-toggle='tab']").bind("shown", function (_) editor.refreshSources());
 
@@ -108,12 +108,12 @@ class TryHaxeEditor
     }
 
 
-    public function toggleFullscreenRunner (e:JqEvent) {
+    /*public function toggleFullscreenRunner (e:JqEvent) {
         var _this = new JQuery(e.target);
         e.preventDefault();
         if (_this.attr('href') != "#")
             editor.openFullScreen();
-    }
+    }*/
 
 
     public function onKey (e:JqEvent)
@@ -245,7 +245,7 @@ class TryHaxeEditor
             .after('<div class="compiler-out span6">
             <div class="pull-right">
                 <a href="#" target="_blank" class="link-btn btn disabled"><i class="icon-share"></i> Link</a>
-                <a href="#" class="fullscreen-btn btn disabled"><i class="icon-resize-full"></i> Fullscreen</a>
+                <!-- <a href="#" class="fullscreen-btn btn disabled"><i class="icon-resize-full"></i> Fullscreen</a> -->
             </div>
             
             <ul class="nav nav-tabs">

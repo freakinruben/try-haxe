@@ -1,14 +1,53 @@
 package js.codemirror;
 
-typedef Element = #if haxe3 js.html.HtmlElement #else js.Dom.HtmlDom #end;
+typedef Element  = #if haxe3 js.html.HtmlElement     #else js.Dom.HtmlDom #end;
+typedef Event    = #if haxe3 js.html.Event           #else js.Dom.Event #end;
 typedef TextArea = #if haxe3 js.html.TextAreaElement #else js.Dom.Textarea #end;
 
-typedef Completions = {
+/*typedef Completions = {
 	list : Array<String>,
 	from : Pos,
 	to : Pos,
-};
+};*/
+typedef CM_Options = {
+	?value : Doc,
+	?mode : Dynamic,
+	?theme : String,
+	?indentUnit : Int,
+	?smartIndent : Bool,
+	?tabSize : Int,
+	?indentWithTabs : Bool,
+	?electricChars : Bool,
+	?rtlMovevIsually : Bool,
+	?keyMap : String,
+	?extraKeys : Dynamic,
+	?lineWrapping : Bool,
+	?lineNumbers : Bool,
+	?firstLineNumber : Int,
+	?lineNumberFormat : Int->String,
+	?gutters : Array<String>,
+	?fixedGutter : Bool,
+	?coverGutterNextToScrollbar : Bool,
+	?readOnly : Bool,
+	?showCUrsosWhenSelecting : Bool,
+	?undoDepth : Int,
+	?historyEventDeley : Int,
+	?tabIndex : Int,
+	?autofocus : Bool,
+	?dragDrop : Bool,
+	?onKeyEvent : CodeMirror->Event->Bool,
+	?cursorBlinkRate : Float,
+	?cursorScrollMargin : Float,
+	?workTime : Float,
+	?workDelay : Float,
+	?pollInterval : Float,
+	?flattenSpans : Bool,
+	?maxHighlightLength : Float,
+	?viewportMargin : Int,
 
+	//plugin options
+	?styleActiveLine : Bool,
+};
 typedef Pos = {
 	line : Int,
 	ch : Int
@@ -111,7 +150,7 @@ typedef HintOptions = {
 	public static var defaults (default,null) : Dynamic;
 	public static var commands (default,null) : Dynamic<CodeMirror->Void>;
 
-	public static function fromTextArea( textarea : TextArea , ?config : Dynamic ) : CodeMirror;
+	public static function fromTextArea( textarea : TextArea , ?config : CM_Options) : CodeMirror;
 	public static function defineExtension(name:String, value:Dynamic) : Void;
 	public static function defineDocExtension(name:String, value:Dynamic) : Void;
 	public static function defineOption(name:String, def:Dynamic, updateFunc:Void->Void) : Void;

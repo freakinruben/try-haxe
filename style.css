@@ -91,3 +91,5 @@ body.fullscreen-runner {
 	height:100%;
 	border:0;
 }
+
+.CodeMirror-activeline-background {background: #e8f2ff !important;}

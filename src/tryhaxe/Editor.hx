@@ -3,17 +3,17 @@ package tryhaxe;
  import haxe.remoting.HttpAsyncConnection;
  import js.codemirror.CodeMirror;
  import js.JQuery;
+  using Lambda;
   using StringTools;
   using Std;
 
 typedef EditorOptions = {
     id: String,
     className: String,
-    editorKeys: Dynamic,
     targets: Int,
     defaultTarget: Int,
-    haxeCode: Dynamic,
-    jsOutput: Dynamic,
+    haxeCode: CM_Options,
+    jsOutput: CM_Options,
     apiURI: String,
     root: String,
     defaultJsArgs: Array<String>,
@@ -28,22 +28,21 @@ class Editor
     public static inline var JS  = 0x02;
 
     /* Default options for setting up CodeMirror for the haxe-source */
-    public static inline function haxeOptions () { return {theme: "default", lineWrapping: true, lineNumbers: true,  mode: "haxe", styleActiveLine: true}; }
+    public static inline function haxeOptions () : CM_Options { return {theme: "default", lineWrapping: true, lineNumbers: true,  mode: "haxe", styleActiveLine: true, extraKeys: defaultKeys(), indentUnit: 4}; }
     /* Default options for setting up CodeMirror for the generated js-output */
-    public static inline function jsOptions ()   { return {theme: "default", lineWrapping: true, lineNumbers: false, mode: "javascript", readOnly: true}; }
+    public static inline function jsOptions () : CM_Options   { return {theme: "default", lineWrapping: true, lineNumbers: false, mode: "javascript", readOnly: true}; }
     /* Default key-bindings for CodeMirror of the haxe-source */
     public static inline function defaultKeys () { return {
         "Ctrl-Space" : "autocomplete",
         "Ctrl-Enter" : "compile",
         "F8" : "compile",
         "F5" : "compile",
-        "F11" : "togglefullscreen"
+    //  "F11" : "togglefullscreen"
     };}
     /* Default options for creating an haxe-editor */
     public static inline function defaultOptions () : EditorOptions { return {
         id: '',
         className: 'Test',
-        editorKeys: defaultKeys,
         targets: SWF | JS,
         defaultTarget: SWF,
         defaultJsArgs: [],
@@ -93,7 +92,7 @@ class Editor
 
         if (!loadedResources) {
             loadResources(o);
-            haxe.Timer.delay(init, 150); //FIXME css and js files need to be loaded before editor is displayed, otherwise CodeMirror will get wrong size
+            haxe.Timer.delay(init, 0); //FIXME css and js files need to be loaded before editor is displayed, otherwise CodeMirror will get wrong size
         } else
             init();
     }
@@ -106,28 +105,25 @@ class Editor
 
         // Initialize UI
         haxeSource = CodeMirror.fromTextArea( cast new JQuery("#"+options.id+" textarea[name='hx-source']")[0], options.haxeCode );
-        haxeSource.setOption("onChange",  onCodeChange);
-        haxeSource.setOption("extraKeys", options.editorKeys);
+        //haxeSource.setOption("onChange",  onCodeChange);
         haxeDoc = haxeSource.getDoc();
+
+#if haxe3   editorMap[haxeSource] = this;
+#else       editorMap.push(this); cmMap.push(haxeSource); #end
 
         if (options.jsOutput != null)
             jsSource = CodeMirror.fromTextArea(cast new JQuery("#"+options.id+" textarea[name='js-source']")[0], options.jsOutput);
 
-        CodeMirror.commands.autocomplete     = autocomplete;
-        CodeMirror.commands.compile          = function(_) compile();
-        CodeMirror.commands.togglefullscreen = function(_) openFullScreen();
-
         //listen for changes in fullscreen
+    /*  js.Dom.window.documentElement.addEventListener  //TODO, make it possible for multiple editors to go fullscreen. Only active editor should be visible then
         untyped __js__("var api = window.fullScreenApi;
             window.document.documentElement.addEventListener(api.fullScreenEventName, function () {
                 if (api.isFullScreen()) { jQuery('body').addClass('fullscreen-runner'); }
                 else { jQuery('body').removeClass('fullscreen-runner'); }
-            });");
+            });");*/
         initialized = true;
-        if (program != null)
-            onProgramLoaded(program);
-        else
-            startNewProgram();
+        if (program != null)    onProgramLoaded(program);
+        else                    startNewProgram();
     }
 
 
@@ -217,7 +213,7 @@ class Editor
     /**
      * updates program-object before compiling
      */
-    private function updateProgram ()
+    private inline function updateProgram ()
     {
         program.main.source = haxeDoc.getValue();
         if (handleCompile != null)
@@ -225,38 +221,37 @@ class Editor
     }
 
 
-    private function autocomplete (cm:CodeMirror)
+    private function autocomplete ()
     {
-        trace("autocomplete");
         updateProgram();
-        var doc = cm.getDoc();
-        var src = doc.getValue();
-        var idx = SourceTools.getAutocompleteIndex(src, doc.getCursor());
+        var src = haxeDoc.getValue();
+        var idx = SourceTools.getAutocompleteIndex(src, haxeDoc.getCursor());
         if (idx == null)
             return;
 
         if (idx == completionIndex) {
-            displayCompletions(cm, completions);
+            displayCompletions(completions);
             return;
         }
         completionIndex = idx;
         if (src.length > 1000)
-            program.main.source = src.substring(0, completionIndex + 1);
+            program.main.source = src.substring(0, idx + 1);
         
-        cnx.Compiler.autocomplete.call([program, idx], function (comps) displayCompletions(cm, comps));
+        cnx.Compiler.autocomplete.call([program, idx], displayCompletions);
     }
 
 
-    private function showHint (cm:CodeMirror, ?opt:Dynamic)
+    private static function showHint (cm:CodeMirror, ?opt:Dynamic)
     {
         var doc   = cm.getDoc();
+        var editor= cmToEditor(cm);
         var src   = doc.getValue();
         var from  = SourceTools.indexToPos(src, SourceTools.getAutocompleteIndex(src, doc.getCursor()));
         var to    = doc.getCursor();
         var token = src.substring(SourceTools.posToIndex(src, from), SourceTools.posToIndex(src, to));
         var list  = [];
 
-        for (c in completions)
+        for (c in editor.completions)
             if (c.toLowerCase().startsWith(token.toLowerCase()))
                 list.push(c);
 
@@ -264,17 +259,17 @@ class Editor
     }
 
 
-    private function displayCompletions (cm:CodeMirror, comps:Array<String>)
+    private function displayCompletions (comps:Array<String>)
     {
         completions = comps;
-        CodeMirror.showHint(cm, showHint);
+        CodeMirror.showHint(haxeSource, Editor.showHint);
     }
 
 
-    private function onCodeChange (cm:CodeMirror, e:Dynamic)//js.codemirror.CodeMirror.ChangeEvent)
-        if (e.text[0].trim().endsWith(".")) {
-            autocomplete(haxeSource);
-        }
+    /*private function onCodeChange (cm:CodeMirror, e:Dynamic) { //js.codemirror.CodeMirror.ChangeEvent)
+        if (e.text[0].trim().endsWith("."))
+            autocomplete();
+    }*/
 
 
 
@@ -346,19 +341,36 @@ class Editor
 
     private static inline function loadResources (opt:EditorOptions)
     {
-        new JQuery('head').append('
+        /*new JQuery('head').append('
             <link rel="stylesheet" href="'+opt.root+'lib/CodeMirror2/lib/codemirror.css"/>
-            <link rel="stylesheet" href="'+opt.root+'lib/CodeMirror2/addon/hint/show-hint.css"/>');
+            <link rel="stylesheet" href="'+opt.root+'lib/CodeMirror2/addon/hint/show-hint.css"/>');*/
         if (opt.haxeCode.theme != 'default')
             new JQuery('head').append('<link rel="stylesheet" href="'+opt.root+'lib/CodeMirror2/theme/'+opt.haxeCode.theme+'.css"/>');
         
-        new JQuery('body').append(
-            '<script src="'+opt.root+'lib/CodeMirror2/lib/codemirror.js"></script>'+
-            '<script src="'+opt.root+'lib/CodeMirror2/mode/haxe/haxe.js"></script>'+
-            '<script src="'+opt.root+'lib/CodeMirror2/mode/javascript/javascript.js"></script>'+
-            '<script src="'+opt.root+'lib/CodeMirror2/addon/hint/show-hint.js"></script>'+
-            '<script src="'+opt.root+'lib/haxe-hint.js"></script>'
-        );
+        /*new JQuery('body').append(
+            '<script type="text/javascript" src="'+opt.root+'lib/CodeMirror2/lib/codemirror.js"></script>'+
+            '<script type="text/javascript" src="'+opt.root+'lib/CodeMirror2/mode/haxe/haxe.js"></script>'+
+            '<script type="text/javascript" src="'+opt.root+'lib/CodeMirror2/mode/javascript/javascript.js"></script>'+
+            '<script type="text/javascript" src="'+opt.root+'lib/CodeMirror2/addon/hint/show-hint.js"></script>'+
+            '<script type="text/javascript" src="'+opt.root+'lib/CodeMirror2/addon/selection/active-line.js"></script>'+
+            '<script type="text/javascript" src="'+opt.root+'lib/haxe-hint.js"></script>'
+        );*/
+
+        CodeMirror.commands.autocomplete     = function (cm) cmToEditor(cm).autocomplete();
+        CodeMirror.commands.compile          = function (cm) cmToEditor(cm).compile();
+    //  CodeMirror.commands.togglefullscreen = function (cm) cmToEditor(cm).togglefullscreen();
         loadedResources = true;
     }
+
+    private static function cmToEditor (cm:CodeMirror) {
+#if haxe3   return editorMap[cm];
+#else       return editorMap[cmMap.indexOf(cm)]; #end
+    }
+
+#if haxe3
+    private static var editorMap (default, null) : Map<CodeMirror,Editor> = new Map();
+#else
+    private static var editorMap (default, null) : Array<Editor> = [];
+    private static var cmMap     (default, null) : Array<CodeMirror> = [];
+#end
 }

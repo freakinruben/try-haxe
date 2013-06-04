@@ -7,7 +7,7 @@ package tryhaxe.api;
 
 class Compiler
 {
-	private static var forbidden = ~/@([^:]*):([^a-z]*)(macro|build|autoBuild|file|audio|bitmap)/;
+	private static var forbidden = ~/@([^:]*):([^a-z]*)(macro|build|autoBuild|file|audio|bitmap|access)/;
 	var tmpDir   : String;
 	var mainFile : String;
 
@@ -38,9 +38,11 @@ class Compiler
 		Api.checkSanity(program.main.name);
 
 		tmpDir = Api.tmp + "/" + program.uid + "/";
-
-		if (!FileSystem.isDirectory(tmpDir))
+ 
+		if (!FileSystem.isDirectory(tmpDir)) {
 			FileSystem.createDirectory(tmpDir);
+			Sys.command("chmod 707 "+tmpDir);
+		}
 
 		mainFile   = tmpDir + program.main.name + ".hx";
 		var source = program.main.source;
@@ -71,19 +73,16 @@ class Compiler
 
 	@:keep public function autocomplete (program:Program, idx:Int) : Array<String>
 	{
-		try {
-			prepareProgram(program);
-		} catch (err:String) {
-			return [];
-		}
+		try 				{ prepareProgram(program); }
+		catch (err:String) 	{ return []; }
 
 		var source = program.main.source;
-		
-		var args = [
+		var args   = [
 			"-cp", tmpDir,
 			"-main", program.main.name,
+			"--no-opt",
 			"-v",
-			"--display", tmpDir + program.main.name + ".hx@" + idx
+			"--display", tmpDir + program.main.name + ".hx@" + (idx + 1)
 		];
 
 		switch (program.target) {
@@ -106,7 +105,7 @@ class Compiler
 				if (!words.has(w))
 					words.push(w);
 			}
-		} catch (e:Dynamic) {}
+		} catch (e:Dynamic) {} // words.push(out.err); }
 		return words;
 	}
 
@@ -202,6 +201,7 @@ class Compiler
 
 	private inline function runHaxe (args:Array<String>)
 	{
+		args.push("--connect"); args.push("6789");
 		var proc = new sys.io.Process("haxe", args);
 		return {
 			proc:     proc,
