@@ -107,7 +107,7 @@ class Editor
 
         // Initialize UI
         haxeSource = CodeMirror.fromTextArea( cast new JQuery("#"+options.id+" textarea[name='hx-source']")[0], options.haxeCode );
-        //haxeSource.setOption("onChange",  onCodeChange);
+        haxeSource.on("change", openAutoComplete);
         haxeDoc = haxeSource.getDoc();
 
 #if haxe3   editorMap[haxeSource] = this;
@@ -131,8 +131,7 @@ class Editor
 
     public inline function dispose ()
     {
-        haxeSource.setOption("extraKeys", null);
-        haxeSource.setOption("onChange", null); //FIXME doesn't seem to remove eventlistener
+        haxeSource.off("change", openAutoComplete);
         haxeSource = null;
         haxeDoc = null;
         jsSource = null;
@@ -254,7 +253,7 @@ class Editor
         for (c in editor.completions)
             if (c.toLowerCase().startsWith(token.toLowerCase()))
                 list.push(c);
-            
+
         return {list: list, from: doc.posFromIndex(from), to: doc.posFromIndex(cursor)};
     }
 
@@ -268,10 +267,10 @@ class Editor
     }
 
 
-    /*private function onCodeChange (cm:CodeMirror, e:Dynamic) { //js.codemirror.CodeMirror.ChangeEvent)
-        if (e.text[0].trim().endsWith("."))
+    private function openAutoComplete (cm:CodeMirror, e:Dynamic) { //js.codemirror.CodeMirror.ChangeEvent)
+        if (e.text.pop() == ".")
             autocomplete();
-    }*/
+    }
 
 
 
