@@ -1,7 +1,7 @@
 package tryhaxe;
-class SourceTools
+extern class SourceTools
 {
-	private static var autocompleteEReg = ~/[^a-zA-Z0-9_\s]/;
+	private static inline var autocompleteEReg = ~/[^a-zA-Z0-9_\s]/;
 
 	public static inline function getAutocompleteIndex( src : String , char : Int ) : Null<Int>{
 		var iniChar = char;
