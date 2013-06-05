@@ -1,7 +1,7 @@
 -cp src
 -php app
 -main tryhaxe.App
---dead-code-elimination
+#--dead-code-elimination
 
 --next
 --dead-code-elimination

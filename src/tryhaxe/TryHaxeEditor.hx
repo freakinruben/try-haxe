@@ -31,9 +31,10 @@ class TryHaxeEditor
         options.defaultSwfArgs = Libs.defaultSwfArgs;
         editor = new Editor(options);
 
-        editor.handleLoaded   = handleLoaded;
-        editor.handleCompile  = handleCompile;
-        editor.handleCompiled = handleCompiled;
+        editor.handleLoaded    = handleLoaded;
+        editor.handleCompile   = handleCompile;
+        editor.handleCompiled  = handleCompiled;
+        editor.handleCompleted = function () compileBtn.buttonReset();
 
         haxeOutput = new JQuery(editorId+"iframe[name='js-run']");
         messages   = new JQuery(editorId+".messages");

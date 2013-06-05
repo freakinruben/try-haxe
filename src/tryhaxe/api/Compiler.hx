@@ -19,26 +19,25 @@ class Compiler
 	}
 
 
-	function prepareProgram (program:Program)
+	private function randomUID (p:Program) {
+		p.uid = haxe.Md5.encode(Math.random().string() + Date.now().getTime().string());
+		if (FileSystem.exists(Api.tmp + "/" + p.uid))
+			randomUID(p);
+	}
+
+
+	private function programUID (p:Program) {
+		p.uid = null;
+		p.uid = haxe.Md5.encode(haxe.Serializer.run(p));
+	}
+
+
+	private function prepareProgram (program:Program)
 	{
-		while (program.uid == null)
-		{
-			var id = haxe.Md5.encode(Math.random().string() + Date.now().getTime().string());
-			id = id.substr(0, 5);
-			var uid = "";
-			for (i in 0...id.length)
-				uid += Math.random() > 0.5 ? id.charAt(i).toUpperCase() : id.charAt(i);
-
-			var tmpDir = Api.tmp + "/" + uid;
-			if (!FileSystem.exists(tmpDir))
-				program.uid = uid;
-		}
-
+		tmpDir = Api.tmp + "/" + program.uid + "/";
 		Api.checkSanity(program.uid);
 		Api.checkSanity(program.main.name);
-
-		tmpDir = Api.tmp + "/" + program.uid + "/";
- 
+ 		
 		if (!FileSystem.isDirectory(tmpDir)) {
 			FileSystem.createDirectory(tmpDir);
 			Sys.command("chmod 707 "+tmpDir);
@@ -48,12 +47,10 @@ class Compiler
 		var source = program.main.source;
 		checkMacros(source);
 		
-		File.saveContent(mainFile, source);
-
-		var s = program.main.source;
 		program.main.source = null;
-		File.saveContent(tmpDir + "/program", haxe.Serializer.run(program));
-		program.main.source = s;
+		File.saveContent(mainFile, source);
+		File.saveContent(tmpDir + "program", haxe.Serializer.run(program));
+		program.main.source = source;
 	}
 
 
@@ -64,7 +61,7 @@ class Compiler
 			return null;
 	
 		tmpDir = Api.tmp + "/" + uid + "/";
-		var p:Program = haxe.Unserializer.run(File.getContent(tmpDir + "/program"));
+		var p:Program = haxe.Unserializer.run(File.getContent(tmpDir + "program"));
 		mainFile = tmpDir + p.main.name + ".hx";
 		p.main.source = File.getContent(mainFile);
 		return p;
@@ -73,16 +70,17 @@ class Compiler
 
 	@:keep public function autocomplete (program:Program, idx:Int) : Array<String>
 	{
+		randomUID(program);
 		try 				{ prepareProgram(program); }
 		catch (err:String) 	{ return []; }
 
-		var source = program.main.source;
 		var args   = [
 			"-cp", tmpDir,
 			"-main", program.main.name,
 			"--no-opt",
 			"-v",
-			"--display", tmpDir + program.main.name + ".hx@" + (idx + 1)
+			//"--no-output",
+			"--display", tmpDir + program.main.name + ".hx@" + idx
 		];
 
 		switch (program.target) {
@@ -96,24 +94,27 @@ class Compiler
 				args.push("-swf-version");
 				args.push(version.string());
 		}
-		var out   = runHaxe(args = args.concat(program.options));
-		var words = [];
+		var out = runHaxe(args = args.concat(program.options));
 		try {
-			var xml = new haxe.xml.Fast(Xml.parse(out.err).firstChild());
+			FileSystem.deleteFile(tmpDir+"program");
+			FileSystem.deleteFile(tmpDir+program.main.name+".hx");
+			FileSystem.deleteDirectory(tmpDir);
+			var xml   = new haxe.xml.Fast(Xml.parse(out.err).firstChild());
+			var words = [];
 			for(e in xml.nodes.i) {
 				var w = e.att.n;
 				if (!words.has(w))
 					words.push(w);
 			}
-		} catch (e:Dynamic) {} // words.push(out.err); }
-		return words;
+			return words;
+		} catch (e:Dynamic) { return []; }
 	}
 
 
 	@:keep public function compile (program:Program) {
-		try {
-			prepareProgram(program);
-		} catch (err:String) {
+		programUID(program);
+		try { prepareProgram(program); }
+		catch (err:String) {
 			return {
 				uid:     program.uid,
 				args:    [],

@@ -59,11 +59,13 @@ class Editor
     //
 
     /* Called before program is compiled */
-    public var handleCompile  : Void -> Void;
+    public var handleCompile   : Void -> Void;
     /* Called when program is compiled */
-    public var handleCompiled : Void -> Void;
+    public var handleCompiled  : Void -> Void;
+    /* Called when autocomplete has loaded */
+    public var handleCompleted : Void -> Void;
     /* Called when a compiled program is loaded and ready. UI needs to update libs/target etc. */
-    public var handleLoaded   : Void -> Void;
+    public var handleLoaded    : Void -> Void;
 
     public var options    (default, null) : EditorOptions;
     public var haxeSource (default, null) : CodeMirror;
@@ -141,9 +143,7 @@ class Editor
         program = null;
         output = null;
 
-        handleLoaded = null;
-        handleCompile = null;
-        handleCompiled = null;
+        handleLoaded = handleCompile = handleCompiled = handleCompleted = null;
     }
 
 
@@ -225,7 +225,7 @@ class Editor
     {
         updateProgram();
         var src = haxeDoc.getValue();
-        var idx = SourceTools.getAutocompleteIndex(src, haxeDoc.getCursor());
+        var idx = haxeDoc.indexFromPos(haxeDoc.getCursor());
         if (idx == null)
             return;
 
@@ -235,7 +235,7 @@ class Editor
         }
         completionIndex = idx;
         if (src.length > 1000)
-            program.main.source = src.substring(0, idx + 1);
+            program.main.source = src.substring(0, idx);
         
         cnx.Compiler.autocomplete.call([program, idx], displayCompletions);
     }
@@ -246,16 +246,16 @@ class Editor
         var doc   = cm.getDoc();
         var editor= cmToEditor(cm);
         var src   = doc.getValue();
-        var from  = SourceTools.indexToPos(src, SourceTools.getAutocompleteIndex(src, doc.getCursor()));
-        var to    = doc.getCursor();
-        var token = src.substring(SourceTools.posToIndex(src, from), SourceTools.posToIndex(src, to));
+        var cursor= doc.indexFromPos(doc.getCursor());
+        var from  = SourceTools.getAutocompleteIndex(src, cursor);
+        var token = src.substring(from, cursor);
         var list  = [];
 
         for (c in editor.completions)
             if (c.toLowerCase().startsWith(token.toLowerCase()))
                 list.push(c);
-
-        return {list: list, from: from, to: to};
+            
+        return {list: list, from: doc.posFromIndex(from), to: doc.posFromIndex(cursor)};
     }
 
 
@@ -263,6 +263,8 @@ class Editor
     {
         completions = comps;
         CodeMirror.showHint(haxeSource, Editor.showHint);
+        if (handleCompleted != null)
+            handleCompleted();
     }
 
 

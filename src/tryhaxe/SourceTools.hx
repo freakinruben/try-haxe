@@ -1,43 +1,12 @@
 package tryhaxe;
-  using Lambda;
+class SourceTools
+{
+	private static var autocompleteEReg = ~/[^a-zA-Z0-9_\s]/;
 
-class SourceTools {
-	public static function indexToPos (src :String, idx:Int) : {line:Int , ch:Int} {
-		var pos = {line: 0, ch: 0};
-		var lines = src.split("\n");
-		for (l in lines){
-			if( idx >= l.length+1 ){
-				idx -= l.length+1;
-				pos.line++;
-			}else{
-				pos.ch += idx;
-				break;
-			}
-		}
-		return pos;
-
-	}
-
-
-	public static function posToIndex( src :String, pos : { line : Int, ch : Int } ){
-		var char = pos.ch;
-		var lines = src.split("\n");
-
-		for( i in 0...pos.line )
-			char += lines[i].length + 1;
-		
-		return char;
-	}
-
-	public static function getAutocompleteIndex( src : String , pos : { line : Int , ch : Int } ) : Null<Int>{
-		var char = posToIndex( src , pos );
+	public static inline function getAutocompleteIndex( src : String , char : Int ) : Null<Int>{
 		var iniChar = char;
-
-		while( !".".split("").has( src.charAt( char ) ) ){
+		while(char > 0 && src.charAt(char - 1) != ".")
 			char--;
-			if( char < 0 ) return null;
-		}
-		var skipped = src.substring(iniChar, char + 1);
-		return (~/[^a-zA-Z0-9_\s]/.match(skipped)) ? null : char;
+		return autocompleteEReg.match(src.substring(iniChar, char)) ? null : char;
 	}
 }
