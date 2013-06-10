@@ -4,7 +4,8 @@
 #--dead-code-elimination
 
 --next
---dead-code-elimination
+#--dead-code-elimination
+-dce full
 -cp lib/haxe-bootstrap
 -D noEmbedBootstrap
 -D noEmbedJS

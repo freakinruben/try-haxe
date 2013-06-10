@@ -110,7 +110,7 @@ class Editor
         haxeSource.on("change", openAutoComplete);
         haxeDoc = haxeSource.getDoc();
 
-#if haxe3   editorMap[haxeSource] = this;
+#if haxe3   editorMap.set(haxeSource, this);
 #else       editorMap.push(this); cmMap.push(haxeSource); #end
 
         if (options.jsOutput != null)
@@ -330,7 +330,7 @@ class Editor
                     msg:  errLine.matched(5)
                 };
                 if (StringTools.trim(err.file) == options.className + ".hx") {
-                    lineHandles.push(haxeSource.setGutterMarker(err.line, "error", new JQuery("<i class='icon-warning-sign icon-white'></i>").toArray()[0]));
+                    lineHandles.push(haxeSource.setGutterMarker(err.line, "error", cast new JQuery("<i class='icon-warning-sign icon-white'></i>").toArray()[0]));
                     markers    .push(haxeDoc.markText({line: err.line, ch: err.from}, {line: err.line, ch: err.to}, {className: "error"}));
                 }
             }
@@ -364,7 +364,7 @@ class Editor
     }
 
     private static function cmToEditor (cm:CodeMirror) {
-#if haxe3   return editorMap[cm];
+#if haxe3   return editorMap.get(cm);
 #else       return editorMap[cmMap.indexOf(cm)]; #end
     }
 

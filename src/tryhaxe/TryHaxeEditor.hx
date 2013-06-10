@@ -57,7 +57,7 @@ class TryHaxeEditor
         initLibs(tryhaxe.Libs.js,  tryhaxe.Libs.defaultJsArgs,  "js");
         initLibs(tryhaxe.Libs.swf, tryhaxe.Libs.defaultSwfArgs, "swf");
 
-        var uid = js.Lib.window.location.hash;
+        var uid = #if haxe3 js.Browser.window.location.hash #else js.Lib.window.location.hash #end;
         if (uid.length > 0) editor.loadProgram(uid.substr(1));
         else                editor.startNewProgram();
 
@@ -163,8 +163,7 @@ class TryHaxeEditor
     private function handleCompiled ()
     {
         var o = editor.output;
-        js.Lib.window.location.hash = "#" + o.uid;
-        
+        #if haxe3 js.Browser.window.location.hash #else js.Lib.window.location.hash #end = "#" + o.uid;        
         var jsSourceElem = new JQuery(editor.jsSource.getWrapperElement());
         var msg : Array<String> = [];
         var msgType : String = "";

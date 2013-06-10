@@ -1,4 +1,9 @@
 package tryhaxe.api;
+#if haxe3
+ import haxe.crypto.MD5;
+#else
+ import haxe.MD5;
+#end
  import sys.FileSystem;
  import sys.io.File;
   using Lambda;
@@ -20,7 +25,7 @@ class Compiler
 
 
 	private function randomUID (p:Program) {
-		p.uid = haxe.Md5.encode(Math.random().string() + Date.now().getTime().string());
+		p.uid = Md5.encode(Math.random().string() + Date.now().getTime().string());
 		if (FileSystem.exists(Api.tmp + "/" + p.uid))
 			randomUID(p);
 	}
@@ -28,7 +33,7 @@ class Compiler
 
 	private function programUID (p:Program) {
 		p.uid = null;
-		p.uid = haxe.Md5.encode(haxe.Serializer.run(p));
+		p.uid = Md5.encode(haxe.Serializer.run(p));
 	}
 
 
@@ -94,7 +99,7 @@ class Compiler
 				args.push("-swf-version");
 				args.push(version.string());
 		}
-		var out = runHaxe(args = args.concat(program.options));
+		var out = runHaxe(args = program.options.concat(args));
 		try {
 			FileSystem.deleteFile(tmpDir+"program");
 			FileSystem.deleteFile(tmpDir+program.main.name+".hx");
@@ -162,7 +167,7 @@ class Compiler
 				html.head.push('<script type="text/javascript">swfobject.embedSWF("'+Api.base+"/"+outputPath+'?r='+Math.random()+'", "flashContent", "100%", "100%", "'+version+'.0.0", null, {}, {wmode:"direct", scale:"noscale"})</script>');
 				html.body.push('<div id="flashContent"><p><a href="http://www.adobe.com/go/getflashplayer"><img src="http://www.adobe.com/images/shared/download_buttons/get_flash_player.gif" alt="Get Adobe Flash player" /></a></p></div>');
 		}
-		var out = runHaxe(args = args.concat(program.options));
+		var out = runHaxe(args = program.options.concat(args));
 		var err = out.err.split(tmpDir).join("");
 		var errors = err.split("\n");
 
