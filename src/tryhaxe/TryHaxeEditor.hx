@@ -9,7 +9,6 @@ class TryHaxeEditor
 {
     var editorId   : String;
     var editor     : Editor;
-    var form       : JQuery;
     var messages   : JQuery;
     var compileBtn : JQuery;
     var targets    : JQuery;
@@ -71,7 +70,7 @@ class TryHaxeEditor
         editorId = null;
         editor.dispose();
         editor = null;
-        form = messages = compileBtn = targets = libs = outDisplay = haxeOutput = jsTab = null;
+        messages = compileBtn = targets = libs = outDisplay = haxeOutput = jsTab = null;
     }
 
     
@@ -256,9 +255,7 @@ class TryHaxeEditor
 
             <div class="tab-content">
                 <div class="tab-pane js-output active thumbnail"><iframe class="js-run" src="about:blank" name="js-run" frameborder="no" scrolling="no"></iframe></div>
-                <div class="tab-pane js-source">
-                    <textarea name="js-source" class="code js-source"></textarea>
-                </div>
+                <div class="tab-pane js-source"><textarea name="js-source" class="code js-source"></textarea></div>
             </div>
             
             <div class="messages"></div>

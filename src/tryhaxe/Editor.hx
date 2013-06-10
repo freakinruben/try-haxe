@@ -94,7 +94,7 @@ class Editor
 
         if (!loadedResources) {
             loadResources(o);
-            haxe.Timer.delay(init, 0); //FIXME css and js files need to be loaded before editor is displayed, otherwise CodeMirror will get wrong size
+            haxe.Timer.delay(init, 300); //FIXME css and js files need to be loaded before editor is displayed, otherwise CodeMirror will get wrong size
         } else
             init();
     }
@@ -342,20 +342,20 @@ class Editor
 
     private static inline function loadResources (opt:EditorOptions)
     {
-        /*new JQuery('head').append('
+        new JQuery('head').append('
             <link rel="stylesheet" href="'+opt.root+'lib/CodeMirror2/lib/codemirror.css"/>
-            <link rel="stylesheet" href="'+opt.root+'lib/CodeMirror2/addon/hint/show-hint.css"/>');*/
+            <link rel="stylesheet" href="'+opt.root+'lib/CodeMirror2/addon/hint/show-hint.css"/>');
         if (opt.haxeCode.theme != 'default')
             new JQuery('head').append('<link rel="stylesheet" href="'+opt.root+'lib/CodeMirror2/theme/'+opt.haxeCode.theme+'.css"/>');
         
-        /*new JQuery('body').append(
+        new JQuery('body').append(
             '<script type="text/javascript" src="'+opt.root+'lib/CodeMirror2/lib/codemirror.js"></script>'+
             '<script type="text/javascript" src="'+opt.root+'lib/CodeMirror2/mode/haxe/haxe.js"></script>'+
             '<script type="text/javascript" src="'+opt.root+'lib/CodeMirror2/mode/javascript/javascript.js"></script>'+
             '<script type="text/javascript" src="'+opt.root+'lib/CodeMirror2/addon/hint/show-hint.js"></script>'+
             '<script type="text/javascript" src="'+opt.root+'lib/CodeMirror2/addon/selection/active-line.js"></script>'+
             '<script type="text/javascript" src="'+opt.root+'lib/haxe-hint.js"></script>'
-        );*/
+        );
 
         CodeMirror.commands.autocomplete     = function (cm) cmToEditor(cm).autocomplete();
         CodeMirror.commands.compile          = function (cm) cmToEditor(cm).compile();
