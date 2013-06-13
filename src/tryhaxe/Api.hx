@@ -39,4 +39,27 @@ class Api
 
 	function runProgram () { php.Lib.print(sys.io.File.getContent(dir+'/index.html')); }
 	function getProgram () { php.Lib.print(sys.io.File.getContent(dir+'/program')); }
+
+
+	public static inline function start (appendRoot = '/app')
+	{
+		var params = php.Web.getParams();
+        var url = params.get('_url');
+        params.remove('_url');
+
+        if (params.exists('_root')) {
+            Api.root = params.get('_root');
+            Api.base = Api.root + appendRoot;
+        } else {
+            var base:String = untyped __php__("$_SERVER['SCRIPT_NAME']");
+            var spl = base.split("/");
+            spl.pop();
+
+            Api.base = spl.join("/");
+            spl.pop();
+            Api.root = spl.join("/");
+        }
+
+        haxe.web.Dispatch.run(url, params, new Api());
+	}
 }
