@@ -163,7 +163,6 @@ class Compiler
 				args.push("-D");	args.push("noEmbedJS");
 #if !haxe3		args.push("--js-modern"); #end //default enabled in haxe3
 				html.body.push("<script src='//ajax.googleapis.com/ajax/libs/jquery/1.7.1/jquery.min.js'></script>");
-				html.body.push('<script>window.jQuery || document.write("<script src=\'../../../lib/jquery.min.js\'><\\/script>")</script>');
 
 			case SWF(name, version):
 				Api.checkSanity(name);
@@ -171,8 +170,8 @@ class Compiler
 				args.push("-swf");			args.push(outputPath);
 				args.push("-swf-version");	args.push(version.string());
 				args.push("-debug");
-				html.head.push("<link rel='stylesheet' href='"+Api.root+"/swf.css' type='text/css'/>");
-				html.head.push("<script src='"+Api.root+"/lib/swfobject.js'></script>");
+				html.head.push("<style type='text/css'>html { height: 100%; overflow: hidden; } #editorPreloader { height: 100%; } body { height: 100%; margin: 0; padding: 0; }</style>");
+				html.head.push("<script src='//ajax.googleapis.com/ajax/libs/swfobject/2.2/swfobject.js'></script>");
 				html.head.push('<script type="text/javascript">swfobject.embedSWF("'+Api.base+"/"+outputPath+'?r='+Math.random()+'", "flashContent", "100%", "100%", "'+version+'.0.0", null, {}, {wmode:"direct", scale:"noscale"})</script>');
 				html.body.push('<div id="flashContent"><p><a href="http://www.adobe.com/go/getflashplayer"><img src="http://www.adobe.com/images/shared/download_buttons/get_flash_player.gif" alt="Get Adobe Flash player" /></a></p></div>');
 		}
@@ -207,9 +206,13 @@ class Compiler
 
 			File.saveContent(htmlPath, h.toString());
 			saveOutput(output);
+		} else {
+			 if (FileSystem.exists(htmlPath))                         FileSystem.deleteFile(htmlPath);
+			 if (FileSystem.exists(tmpDir+"program"))                 FileSystem.deleteFile(tmpDir + "program");
+			 if (FileSystem.exists(tmpDir+"output"))                  FileSystem.deleteFile(tmpDir + "output");
+			 if (FileSystem.exists(tmpDir+program.main.name + ".hx")) FileSystem.deleteFile(tmpDir + program.main.name + ".hx");
+			 FileSystem.deleteDirectory(tmpDir);
 		}
-		else if (FileSystem.exists(htmlPath))
-			FileSystem.deleteFile(htmlPath);
 		
 		return output;
 	}
