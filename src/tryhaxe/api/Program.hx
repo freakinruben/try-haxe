@@ -28,3 +28,8 @@ typedef Output = {
 	href : String,
 	source : String
 }
+
+typedef Compiled = {
+	out : Output,
+	program : Program,
+}

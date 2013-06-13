@@ -4,6 +4,7 @@ package tryhaxe.api;
 #else
  import haxe.MD5;
 #end
+ import tryhaxe.api.Program;
  import sys.FileSystem;
  import sys.io.File;
   using Lambda;
@@ -14,7 +15,6 @@ class Compiler
 {
 	private static var forbidden = ~/@([^:]*):([^a-z]*)(macro|build|autoBuild|file|audio|bitmap|access)/;
 	var tmpDir   : String;
-	var mainFile : String;
 
 	public function new() {}
 
@@ -48,18 +48,23 @@ class Compiler
 			Sys.command("chmod 707 "+tmpDir);
 		}
 
-		mainFile   = tmpDir + program.main.name + ".hx";
 		var source = program.main.source;
 		checkMacros(source);
-		
+
 		program.main.source = null;
-		File.saveContent(mainFile, source);
+		File.saveContent(tmpDir + program.main.name + ".hx", source);
 		File.saveContent(tmpDir + "program", haxe.Serializer.run(program));
 		program.main.source = source;
 	}
 
 
-	@:keep public function getProgram (uid:String):Program
+	private inline function saveOutput (output:Output)
+	{
+		File.saveContent(tmpDir + "output", haxe.Serializer.run(output));
+	}
+
+
+	@:keep public function getProgram (uid:String):Compiled
 	{
 		Api.checkSanity(uid);
 		if (!FileSystem.isDirectory(Api.tmp + "/" + uid))
@@ -67,9 +72,9 @@ class Compiler
 	
 		tmpDir = Api.tmp + "/" + uid + "/";
 		var p:Program = haxe.Unserializer.run(File.getContent(tmpDir + "program"));
-		mainFile = tmpDir + p.main.name + ".hx";
-		p.main.source = File.getContent(mainFile);
-		return p;
+		p.main.source = File.getContent(tmpDir + p.main.name + ".hx");
+		var o:Output  = haxe.Unserializer.run(File.getContent(tmpDir + "output"));
+		return {out: o, program: p};
 	}
 
 
@@ -116,8 +121,12 @@ class Compiler
 	}
 
 
-	@:keep public function compile (program:Program) {
+	@:keep public function compile (program:Program) : Output {
 		programUID(program);
+		var compiled = getProgram(program.uid);
+		if (compiled != null)
+			return compiled.out;
+
 		try { prepareProgram(program); }
 		catch (err:String) {
 			return {
@@ -129,7 +138,7 @@ class Compiler
 				success: false,
 				href:    "",
 				source:  ""
-			}
+			};
 		}
 
 		var args = [
@@ -151,8 +160,8 @@ class Compiler
 				Api.checkSanity(name);
 				outputPath = tmpDir + name + ".js";
 				args.push("-js");	args.push(outputPath);
-#if !haxe3		args.push("--js-modern"); #end //default enabled in haxe3
 				args.push("-D");	args.push("noEmbedJS");
+#if !haxe3		args.push("--js-modern"); #end //default enabled in haxe3
 				html.body.push("<script src='//ajax.googleapis.com/ajax/libs/jquery/1.7.1/jquery.min.js'></script>");
 				html.body.push('<script>window.jQuery || document.write("<script src=\'../../../lib/jquery.min.js\'><\\/script>")</script>');
 
@@ -197,6 +206,7 @@ class Compiler
 			h.add('\n\t</body>\n</html>');
 
 			File.saveContent(htmlPath, h.toString());
+			saveOutput(output);
 		}
 		else if (FileSystem.exists(htmlPath))
 			FileSystem.deleteFile(htmlPath);

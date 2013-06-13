@@ -124,7 +124,7 @@ class Editor
                 else { jQuery('body').removeClass('fullscreen-runner'); }
             });");*/
         initialized = true;
-        if (program != null)    onProgramLoaded(program);
+        if (program != null)    onProgramLoaded({out: output, program: program});
         else                    startNewProgram();
     }
 
@@ -147,7 +147,7 @@ class Editor
 
 
     public function startNewProgram () if (initialized) {
-        onProgramLoaded({
+        onProgramLoaded({out: null, program: {
             uid: null,
             main: {
                 name:   options.className,
@@ -155,7 +155,7 @@ class Editor
             },
             target: toTarget(options.defaultTarget),
             options: options.defaultTarget == JS ? options.defaultJsArgs : options.defaultSwfArgs
-        });
+        }});
     }
 
 
@@ -194,14 +194,17 @@ class Editor
     }
 
 
-    private function onProgramLoaded (p:Program) if (p != null)
+    private function onProgramLoaded (c:Compiled) if (c != null)
     {
-        program = p;        // sharing
-        p.uid   = null;     // auto-fork
+        program = c.program; // sharing
+        output = c.out;
         if (initialized) {
-            haxeDoc.setValue(p.main.source);
+            haxeDoc.setValue(program.main.source);
             if (handleLoaded != null)
                 handleLoaded();
+
+            if (c.out != null)
+                onCompiled(c.out);
         }
     }
 
